@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>afl_sim</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/">afl_sim</a>
+    <select id="ctx" class="ctx" title="Which game and engine version the whole app shows and plays: results, ladders, bots, new matches and tournaments"></select>
+    <nav id="nav"></nav>
+    <button id="jobs-toggle" class="btn ghost" title="Jobs: everything the app has started">Jobs <span id="jobs-badge" class="badge hidden">0</span></button>
+  </header>
+  <div class="layout">
+    <main id="view"><p class="muted pad">Loading…</p></main>
+    <aside id="jobs" class="drawer hidden"></aside>
+  </div>
+  <div id="toasts"></div>
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

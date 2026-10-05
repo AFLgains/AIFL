@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aflsim"
+version = "0.1.0"
+description = "Australian Rules football simulator (AFL8: 8 a side, AFL18: 18 a side): a physics engine, bots, tournaments, ratings, replays and a web app"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2.0", "matplotlib>=3.8", "pillow>=10"]
+
+[project.optional-dependencies]
+ml = ["torch>=2.2"]
+app = ["fastapi>=0.110", "uvicorn>=0.29", "imageio-ffmpeg>=0.5"]   # the web front end (python afl.py app)
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+afl = "aflsim.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+aflsim = ["analyst/kit/**/*", "games/afl8/render/*.png", "app/web/**/*", "bots/botkit_template/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: long-running (full games, search rollouts, video); deselect with -m 'not slow'",
+]

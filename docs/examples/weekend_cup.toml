@@ -1,0 +1,8 @@
+# An example tournament. Copy it into tournaments/ and run:   python afl.py tournament tournaments/weekend_cup.toml
+# Swap in your own bots (e.g. "mine/my_bot" for bots/afl8/code/mine/my_bot.py).
+name = "weekend_cup"
+format = "round_robin"
+seconds = 240
+seeds = 5
+seed = 100000
+bots = ["zoo:rules", "zoo:zone", "zoo:press", "zoo:keeper", "zoo:runner", "zoo:ontario"]

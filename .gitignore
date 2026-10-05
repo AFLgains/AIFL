@@ -1,0 +1,77 @@
+# ============================================================================================================
+# PUBLIC REPOSITORY: a WHITELIST. Everything is private by default; only what is un-ignored below is published:
+# the game engine (AFL8 and AFL18), the web app (Develop / Play / Inspect, play-it-yourself, the retro viewer),
+# the templates for writing bots, and the documentation. Anything new you create stays private unless you add it
+# here on purpose.
+#
+# Check before every push:   git status        (only what you mean to publish should be listed)
+# ============================================================================================================
+
+# --- 1. ignore everything at the top level ...
+/*
+
+# --- 2. ... then publish these
+!/.gitignore
+!/.env.example
+!/.github/
+!/docs/
+!/pyproject.toml
+!/requirements.lock
+!/afl.py
+!/run_app.bat
+!/LICENSE
+
+# the package: the engine, the match machinery, the bot tooling and the app
+!/src/
+/src/*
+!/src/aflsim/
+/src/aflsim/*
+!/src/aflsim/__init__.py
+!/src/aflsim/__main__.py
+!/src/aflsim/paths.py
+!/src/aflsim/cli.py
+!/src/aflsim/engine/
+!/src/aflsim/exec/
+!/src/aflsim/match/
+!/src/aflsim/video/
+!/src/aflsim/bots/
+!/src/aflsim/games/
+!/src/aflsim/app/
+
+# --- 3. private files inside the published folders
+/src/aflsim/games/afl8/encode.py
+/src/aflsim/games/afl8/search.py
+/src/aflsim/games/afl8/prompts.py
+/src/aflsim/games/afl8/prompts_coached.py
+/src/aflsim/games/afl8/llm_bots.py
+/src/aflsim/games/afl8/teampack.py
+/src/aflsim/games/afl8/controllers/llm.py
+/src/aflsim/games/afl8/controllers/jev.py
+/src/aflsim/games/afl8/controllers/coached.py
+/src/aflsim/games/afl8/analysis.py
+/src/aflsim/games/afl18/analysis.py
+/src/aflsim/app/api/analysis.py
+/src/aflsim/app/api/lab.py
+/src/aflsim/app/lab_services.py
+/src/aflsim/lab_cli.py
+/src/aflsim/app/web/js/sections/lab.js
+/src/aflsim/app/web/js/lab/
+/src/aflsim/app/web/js/analysis/page.js
+/src/aflsim/app/web/js/analysis/board.js
+/src/aflsim/app/web/js/analysis/sandbox_panel.js
+/src/aflsim/app/web/js/analysis/setup_page.js
+/src/aflsim/app/web/js/analysis/view3d.js
+/src/aflsim/app/web/vendor/
+
+# --- 4. never, anywhere
+.env
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+*.mp4
+*.sqlite
+*.pt
+*.npz
+*.json.gz
