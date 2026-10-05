@@ -43,7 +43,7 @@ def unit(v):
 
 class LiveMatch:
     def __init__(self, g, opponent: str, helper: str, seconds: float = 240.0, human: str = "A", seed: int | None = None, game_name: str = "afl8",
-                 names: dict | None = None):
+                  names: dict | None = None, view: str = "retro"):
         from aflsim.bots.registry import load_bot
         self.g = g; self.seed = int(seed if seed is not None else time.time()) % 1_000_000
         self.r = g.make_rules(seconds, **ARCADE); self.game = g.new_game(self.r, self.seed, mirror=True)
@@ -55,6 +55,7 @@ class LiveMatch:
         self.problems = {"A": [], "B": []}; self.recent = []; self.t_dec = -1e9; self.trigger = "start"
         self.input = {"dir": [0.0, 0.0], "sprint": False}; self.presses = []
         self.order = None; self.disposal = None; self.lockout = 0.0; self.notes = []
+        self.view = view
         self.frames = []; self.events_out = []; self.n_events = 0
         self.lock = threading.Lock(); self.status = "playing"; self.hold_until = 0.0; self.last_poll = time.time()
         self.control = min(self.mine, key=lambda p: np.linalg.norm(self.game.players[p].pos - self.game.ball_pos))
@@ -64,6 +65,10 @@ class LiveMatch:
     # ------------------------------------------------------------ what the browser needs once
     def static(self) -> dict:
         meta = self.game.meta(); meta["roles"] = {p: self.game.players[p].role for p in self.pids}
+        if self.view == "3d":
+            keys = ("length", "width", "goal_half_width", "behind_half_width", "centre_square", "centre_circle_radius", "arc_radius")
+            return {"names": self.names, "seconds": self.r.episode_seconds, "human": self.human, "window": WINDOW,
+                    "rules": {key: getattr(self.r, key) for key in keys}}
         return {"names": self.names, "pids": self.pids, "roles": meta["roles"], "tags": player_tags(meta), "ground": ground_data(self.r),
                 "sprites": sprite_sheet(), "seconds": self.r.episode_seconds, "human": self.human, "window": WINDOW}
 
@@ -71,19 +76,32 @@ class LiveMatch:
     def tick(self, since: int, ev_since: int, inp: dict | None, presses: list | None) -> dict:
         with self.lock:
             self.last_poll = time.time()
-            if inp:
+            if inp and self.status == "playing":
                 self.input = {"dir": [float(inp.get("dir", [0, 0])[0]), float(inp.get("dir", [0, 0])[1])], "sprint": bool(inp.get("sprint"))}
-            if presses:
+            if presses and self.status == "playing":
                 self.presses += [str(p) for p in presses][:20]
             frames = self.frames[since + 1:] if since >= -1 else self.frames[-1:]
             events = self.events_out[ev_since:]
             nxt = self._candidate()
             return {"frames": frames, "seq": len(self.frames) - 1, "events": events, "ev": len(self.events_out), "status": self.status, "error": getattr(self, "error", None),
                     "control": {"pid": self.control, "next": nxt, "order": self.order[0] if self.order else None},
-                    "notes": [n for n in self.notes if time.time() - n[2] < 1.2]}
+                 "notes": [n for n in self.notes if time.time() - n[2] < 1.2]}
 
     def stop(self):
         self.status = "stopped"
+
+    def set_paused(self, paused: bool) -> str:
+        with self.lock:
+            if self.status in ("playing", "paused"):
+                if paused and self.status == "playing":
+                    self.paused_at = time.time()
+                elif not paused and self.status == "paused":
+                    self.hold_until += time.time() - self.paused_at
+                self.status = "paused" if paused else "playing"
+                self.input = {"dir": [0.0, 0.0], "sprint": False}
+                self.presses.clear()
+                self.last_poll = time.time()
+            return self.status
 
     # ------------------------------------------------------------ the loop
     def _run(self):
@@ -97,13 +115,17 @@ class LiveMatch:
     def _loop(self):
         g, r = self.game, self.r
         next_t = time.time()
-        while self.status == "playing":
+        while self.status in ("playing", "paused"):
             if time.time() - self.last_poll > 20.0:                          # nobody watching: stop
                 self.status = "abandoned"; break
+            if self.status == "paused":
+                time.sleep(0.02); next_t = time.time(); continue
             now = time.time()
             if now < self.hold_until:
                 time.sleep(0.02); next_t = time.time(); continue
             with self.lock:
+                if self.status != "playing":
+                    continue
                 if self.trigger or g.t - self.t_dec >= r.decision_interval - 1e-9:
                     self._decide()
                 self._human()
@@ -114,10 +136,20 @@ class LiveMatch:
                     self.trigger = g.trigger
                 self._events(new)
                 self._auto_switch(new)
-                f = pack_frame(g.snapshot(), self.pids)
-                if g.ball_state == "flight" and g.flight is not None:
-                    f["li"] = round(g.flight.t0 + g.flight.duration - g.t, 2); f["kt"] = g.flight.kicker[0]
-                self.frames.append(f)
+                if self.view == "3d":
+                    if not self.frames or len(g.events) > n0 or round(g.t / r.physics_dt) % 2 == 0 or g.done:
+                        state = g.observation(new)
+                        self.frames.append({"kind": "decision", "k": len(self.frames), "t": round(g.t, 2),
+                                            "trigger": "ball-up" if any(e["type"] == "score" for e in new) else (new[0]["type"] if new else "live"),
+                                            "state": {"score": state["score"], "ball": state["ball"],
+                                                      "team_A": [{k: p[k] for k in ("id", "role", "pos", "vel", "energy")} for p in state["team_A"]],
+                                                      "team_B": [{k: p[k] for k in ("id", "role", "pos", "vel", "energy")} for p in state["team_B"]],
+                                                      "recent_events": new}})
+                else:
+                    f = pack_frame(g.snapshot(), self.pids)
+                    if g.ball_state == "flight" and g.flight is not None:
+                        f["li"] = round(g.flight.t0 + g.flight.duration - g.t, 2); f["kt"] = g.flight.kicker[0]
+                    self.frames.append(f)
                 if g.done:
                     self.status = "finished"; self.events_out.append({"k": "end", "t": round(g.t, 2), "result": g.result}); break
             next_t += r.physics_dt
@@ -279,6 +311,8 @@ class LiveMatch:
 
     def _switch(self, press):
         g = self.game
+        if press.startswith("switch_to:"):
+            self._set_control(press.split(":", 1)[1]); return
         if ":" in press:
             try:
                 dx, dy = (float(v) for v in press.split(":")[1].split(","))

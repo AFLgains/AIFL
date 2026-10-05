@@ -19,12 +19,28 @@
 !/requirements.lock
 !/afl.py
 !/run_app.bat
+!/run_aflhub.sh
 !/LICENSE
 
 # the package: the engine, the match machinery, the bot tooling and the app
 !/src/
 /src/*
 !/src/aflsim/
+!/src/aflhub/
+/src/aflhub/*
+!/src/aflhub/README.md
+!/src/aflhub/index.html
+!/src/aflhub/package.json
+!/src/aflhub/package-lock.json
+!/src/aflhub/vite.config.ts
+!/src/aflhub/tsconfig.json
+!/src/aflhub/tsconfig.app.json
+!/src/aflhub/tsconfig.node.json
+!/src/aflhub/eslint.config.js
+!/src/aflhub/src/
+!/src/aflhub/public/
+/src/aflhub/node_modules/
+/src/aflhub/dist/
 /src/aflsim/*
 !/src/aflsim/__init__.py
 !/src/aflsim/__main__.py
