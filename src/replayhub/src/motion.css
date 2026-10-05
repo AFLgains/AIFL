@@ -1,0 +1,31 @@
+.highlight-jump{display:inline-flex;align-items:center;gap:7px;margin-left:13px;padding:7px 10px;border:1px solid #e4a36364;border-radius:5px;background:#e4a36319;color:#ffc184;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
+.highlight-jump:hover{background:#e4a36333;border-color:#f4ba7f}
+.highlight-jump:disabled{opacity:.35;cursor:default}
+@media(max-width:630px){.highlight-jump{margin-left:3px;font-size:8px;padding:6px}}
+.rail{overflow-y:auto}
+.library-game{display:flex;align-items:center;gap:10px;width:100%;min-height:54px;padding:8px 10px;margin:0 0 5px;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;color:#aab6ba}
+.library-game:hover{background:#263139;border-color:#39434a}
+.library-game.active{background:#302d2b;border-color:#a06e433d}
+.library-num{display:grid;place-items:center;flex:none;width:29px;height:29px;border-radius:6px;background:#333e44;color:#d3dddf;font:800 11px Outfit}
+.library-game.active .library-num{background:#e4a363;color:#243139}
+.library-copy{min-width:0;display:block}
+.library-copy strong{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e6ecec}
+.library-copy small{display:block;margin-top:3px;font-size:9px;color:#87969b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-chip label{min-width:0;display:block}
+.match-chip select{display:block;max-width:235px;width:100%;margin:2px 0 0;padding:0;border:0;outline:none;appearance:none;background:transparent;color:#e9eced;font-size:10px;font-weight:800;cursor:pointer}
+.match-chip select option{background:#20292f;color:#e9eced}
+.match-chip:focus-within{border-color:#f0af77}
+.match-chip svg{pointer-events:none}
+.score-team{min-width:0}
+.team-info{min-width:0}
+.team-info strong{display:block;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.transport-right>.muted-icon,.transport-right>.mute-note,.transport-right>.control-divider{display:none}
+.onball-view{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:7px}
+.crowd-toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid #566a6c;border-radius:6px;background:#283638;color:#bbd1d2;font-size:10px;font-weight:800;letter-spacing:.045em;white-space:nowrap}
+.crowd-toggle:hover,.crowd-toggle.active{background:#294239;border-color:#74ba8c;color:#b6efc0}
+.crowd-audio-error{color:#eab078;font-size:10px;margin:6px 0 0}
+.onball-view .camera-pill{color:#d4e3df;border-color:#4f6967;background:#253536;white-space:nowrap}
+.onball-view .camera-pill.active{color:#ffcea0;background:#353431;border-color:#b98959}
+.onball-view .camera-pill span{font-weight:500;color:#95aaa8}
+@media(max-width:630px){.match-chip{display:flex;margin-top:15px;max-width:100%;width:max-content}.match-chip select{max-width:230px}.scoreboard{max-width:calc(100% - 12px)}.score-team{flex:1}.team-info strong{max-width:none}.team-info{overflow:hidden}.score-time{flex:none}}
+@media(max-width:630px){.onball-view{justify-content:center;flex-wrap:wrap}.onball-view .camera-pill{flex:1;justify-content:center}.onball-view .camera-pill span{display:none}}

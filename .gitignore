@@ -19,12 +19,28 @@
 !/requirements.lock
 !/afl.py
 !/run_app.bat
+!/run_replayhub.sh
 !/LICENSE
 
 # the package: the engine, the match machinery, the bot tooling and the app
 !/src/
 /src/*
 !/src/aflsim/
+!/src/replayhub/
+/src/replayhub/*
+!/src/replayhub/README.md
+!/src/replayhub/index.html
+!/src/replayhub/package.json
+!/src/replayhub/package-lock.json
+!/src/replayhub/vite.config.ts
+!/src/replayhub/tsconfig.json
+!/src/replayhub/tsconfig.app.json
+!/src/replayhub/tsconfig.node.json
+!/src/replayhub/eslint.config.js
+!/src/replayhub/src/
+!/src/replayhub/public/
+/src/replayhub/node_modules/
+/src/replayhub/dist/
 /src/aflsim/*
 !/src/aflsim/__init__.py
 !/src/aflsim/__main__.py

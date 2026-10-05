@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from aflsim import paths
 from aflsim.app import services as S
-from aflsim.app.api import develop, inspect, jobs, live, media, play
+from aflsim.app.api import develop, inspect, jobs, live, media, play, replayhub
 from aflsim.app.jobs import JobManager
 
 
@@ -48,7 +48,7 @@ def create_app() -> FastAPI:
     sandbox = _optional("aflsim.analysis.sandbox")
     app.state.sandboxes = sandbox.Sessions() if sandbox else None          # open analysis-board sandboxes (in memory)
     private = [m for m in (_optional("aflsim.app.api.analysis"), _optional("aflsim.app.api.lab")) if m is not None]
-    for r in (develop.router, play.router, inspect.router, media.router, jobs.router, live.router,
+    for r in (develop.router, play.router, inspect.router, media.router, jobs.router, live.router, replayhub.router,
               *[m.router for m in private], *[m.media_router for m in private if hasattr(m, "media_router")]):
         app.include_router(r)
     sections = [s for s in SECTIONS if s["id"] != "lab" or _optional("aflsim.app.api.lab") is not None]
@@ -100,6 +100,21 @@ def create_app() -> FastAPI:
         if not os.path.isfile(p):
             raise HTTPException(404, rel)
         return FileResponse(p, headers={"Cache-Control": "public, max-age=31536000, immutable"})   # a new version = a new URL
+
+    @app.get("/replayhub")
+    @app.get("/replayhub/{rel:path}")
+    def replayhub_file(rel: str = ""):
+        """Serve the separately built 3D viewer under the app's own origin (and context cookie)."""
+        dist = os.path.abspath(os.path.join(WEB, "..", "..", "..", "replayhub", "dist"))
+        try:
+            p = S.safe_join(dist, rel or "index.html")
+        except PermissionError:
+            raise HTTPException(403, "no")
+        if not os.path.isfile(p):
+            if not os.path.isdir(dist):
+                raise HTTPException(404, "Build replayhub first: cd src/replayhub && npm install && npm run build")
+            raise HTTPException(404, rel)
+        return FileResponse(p, headers={"Cache-Control": "no-cache" if not rel else "public, max-age=31536000, immutable"})
 
     app.mount("/static", StaticFiles(directory=WEB), name="static")
     return app

@@ -31,6 +31,11 @@ list, its videos, **Render video**, and **👾 Watch** — the game replayed liv
 coach panels with each team's energy bars, the tilted oval and its pixel crowd, the ball on its arc, the possession
 chain, goal celebrations and chiptune sound. **🎬 Make video** in the viewer exports it as an mp4.
 
+**3D replay** on a match page opens Replayhub: the React/Three.js Replay Room viewer with camera controls,
+scrubbing, crowd audio and JSONL imports. Build it once with `cd src/replayhub && npm install && npm run build`; the app serves it
+at `/replayhub/`. For frontend development, `npm run dev` inside that folder runs it at
+`http://127.0.0.1:5173/replayhub/` and proxies the API to the app on port 8765.
+
 ## Playing yourself
 
 You're red, attacking right, controlling one player at a time (the yellow **P1** marker); the rest of your team is

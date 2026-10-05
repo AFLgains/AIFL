@@ -97,7 +97,8 @@ async function match(el, id) {
   const back = m.tournament_id ? [h("a", { href: resultsLink({ tournament: m.tournament_id }) }, "← games of " + (m.tournament || "tournament")), h("a", { href: "#/play/tournament/" + m.tournament_id }, "standings")]
     : [h("a", { href: "#/inspect/results" }, "← all results")];
   clear(el,
-    h("div.row", back, h("span.muted", "match #" + m.id), h("button.btn.right", { title: "replay it live as the retro broadcast (sound, video export)", onclick: () => openMatch(m.id).catch((e) => toast("Couldn't open the replay: " + (e.message || e), "bad")) }, "👾 Watch"),
+    h("div.row", back, h("span.muted", "match #" + m.id), h("a.btn.right", { href: "/replayhub/?match=" + m.id, title: "watch this match in the 3D replayhub" }, "3D replay"),
+    h("button.btn", { title: "replay it live as the retro broadcast (sound, video export)", onclick: () => openMatch(m.id).catch((e) => toast("Couldn't open the replay: " + (e.message || e), "bad")) }, "👾 Watch"),
     window.AFL_META.features.analysis ? h("a.btn.red", { href: "#/inspect/analyse/" + m.id }, window.AFL_META.features.sandbox ? "Analyse ▸ (footage, transcript, sandbox, engine)" : "Analyse ▸ (footage, transcript)") : null),
     h("div.card.row", { style: { marginTop: "8px", gap: "24px" } },
       h("div", h("div.teamA", h("b", m.bot_a)), h("div.muted", "team A · attacks right")),
