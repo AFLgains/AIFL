@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from aflsim import paths
 from aflsim.app import services as S
-from aflsim.app.api import develop, inspect, jobs, live, media, play, replayhub
+from aflsim.app.api import develop, inspect, jobs, live, media, play, aflhub as replayhub
 from aflsim.app.jobs import JobManager
 
 
