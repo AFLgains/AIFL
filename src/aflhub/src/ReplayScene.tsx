@@ -120,10 +120,13 @@ const Stadium = memo(function Stadium() {
   </group>
 })
 
-function CameraDirector({ view, focus, ball }: { view: View; focus: Vec2; ball: Pose['ball'] }) {
+function CameraDirector({ view, focus, ball, onCameraBasis }: { view: View; focus: Vec2; ball: Pose['ball']; onCameraBasis?: (right: Vec2, forward: Vec2) => void }) {
   const { camera } = useThree()
   const controls = useRef<OrbitControlsImpl>(null)
   const previousView = useRef<View>('broadcast')
+  const direction = useMemo(() => new THREE.Vector3(), [])
+  const right = useMemo(() => new THREE.Vector3(), [])
+  const up = useMemo(() => new THREE.Vector3(0, 1, 0), [])
   useFrame((_, delta) => {
     if (view === 'onball') {
       const target = ballCameraTarget(ball.position, ball.height)
@@ -135,6 +138,12 @@ function CameraDirector({ view, focus, ball }: { view: View; focus: Vec2; ball: 
           followBallTarget(camera, controls.current.target, target)
         }
         controls.current.update()
+      }
+      if (onCameraBasis) {
+        camera.getWorldDirection(direction)
+        right.crossVectors(direction, up).normalize()
+        const ground = Math.hypot(direction.x, direction.z) || 1
+        onCameraBasis([right.x, right.z], [direction.x / ground, direction.z / ground])
       }
       previousView.current = view
       return
@@ -151,6 +160,12 @@ function CameraDirector({ view, focus, ball }: { view: View; focus: Vec2; ball: 
     camera.position.lerp(desired, ease)
     controls.current?.target.lerp(target, ease)
     controls.current?.update()
+    if (onCameraBasis) {
+      camera.getWorldDirection(direction)
+      right.crossVectors(direction, up).normalize()
+      const ground = Math.hypot(direction.x, direction.z) || 1
+      onCameraBasis([right.x, right.z], [direction.x / ground, direction.z / ground])
+    }
   })
   return <>
     <PerspectiveCamera makeDefault position={[30, 62, 85]} fov={48} near={0.1} far={700} />
@@ -158,7 +173,7 @@ function CameraDirector({ view, focus, ball }: { view: View; focus: Vec2; ball: 
   </>
 }
 
-export default function ReplayScene({ replay, pose, view, selected, onSelect }: { replay: Replay; pose: Pose; view: View; selected: string | null; onSelect: (id: string) => void }) {
+export default function ReplayScene({ replay, pose, view, selected, onSelect, onCameraBasis }: { replay: Replay; pose: Pose; view: View; selected: string | null; onSelect: (id: string) => void; onCameraBasis?: (right: Vec2, forward: Vec2) => void }) {
   const staged = useMemo(() => stagePlayers(pose.players, pose.ball.owner), [pose.players, pose.ball.owner])
   const holder = staged.find(({ player }) => player.id === pose.ball.owner)
   let visibleBall = holder ? { ...pose.ball, position: holder.position } : pose.ball
@@ -207,6 +222,6 @@ export default function ReplayScene({ replay, pose, view, selected, onSelect }: 
     {trail.slice(1).map((point, i) => <Line key={i} points={[trail[i], point]}
       color="#f3c98b" transparent opacity={0.05 + 0.62 * ((i + 1) / (trail.length - 1)) ** 1.5}
       lineWidth={1.2 + 2.2 * (i + 1) / (trail.length - 1)} />)}
-    <CameraDirector view={view} focus={focus} ball={visibleBall} />
+    <CameraDirector view={view} focus={focus} ball={visibleBall} onCameraBasis={onCameraBasis} />
   </Canvas>
 }

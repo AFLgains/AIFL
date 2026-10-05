@@ -14,7 +14,7 @@ from fastapi.responses import Response
 
 from aflsim.app import services as S
 
-router = APIRouter(prefix="/api/replayhub", tags=["replayhub"])
+router = APIRouter(prefix="/api/aflhub", tags=["aflhub"])
 
 
 @router.get("/matches/{match_id}/jsonl")

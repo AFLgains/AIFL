@@ -6,6 +6,7 @@ import { createCrowdAudio, crowdMix } from './crowdAudio'
 import type { CrowdAudio } from './crowdAudio'
 import { clock, frameAt, matchEvents, parseReplay, poseAt } from './replay'
 import type { Replay } from './replay'
+import GameView from './GameView'
 import './index.css'
 import './motion.css'
 
@@ -19,6 +20,7 @@ type View = 'broadcast' | 'free' | 'aerial' | 'onball'
 const speeds = [0.5, 1, 1.5, 2]
 
 function App() {
+  const [tab, setTab] = useState<'game' | 'replay'>('replay')
   const [replay, setReplay] = useState<Replay | null>(null)
   const [error, setError] = useState('')
   const [time, setTime] = useState(0)
@@ -70,7 +72,7 @@ function App() {
     setView('broadcast')
     setPlaying(true)
     setFileName(game?.title ?? `AIFL match #${match}`)
-    const url = match ? `/api/replayhub/matches/${match}/jsonl` : `${import.meta.env.BASE_URL}${game!.file}`
+    const url = match ? `/api/aflhub/matches/${match}/jsonl` : `${import.meta.env.BASE_URL}${game!.file}`
     fetch(url, { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error(`Could not load ${game?.title ?? `match #${match}`} (${response.status})`)
       return response.text()
@@ -83,7 +85,7 @@ function App() {
   }, [selectedGame])
 
   useEffect(() => {
-    if (!playing || !replay || scrubbing) return
+    if (tab !== 'replay' || !playing || !replay || scrubbing) return
     let handle = 0
     lastTick.current = 0
     const update = (now: number) => {
@@ -97,7 +99,7 @@ function App() {
     }
     handle = requestAnimationFrame(update)
     return () => cancelAnimationFrame(handle)
-  }, [playing, replay, speed, scrubbing])
+  }, [tab, playing, replay, speed, scrubbing])
 
   useEffect(() => {
     if (replay && time >= replay.header.seconds) setPlaying(false)
@@ -108,6 +110,7 @@ function App() {
   }, [replay])
 
   useEffect(() => {
+    if (tab !== 'replay') return
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return
       if (event.code === 'Space') { event.preventDefault(); setPlaying((value) => !value) }
@@ -116,7 +119,7 @@ function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [seek, time])
+  }, [tab, seek, time])
 
   const pose = useMemo(() => replay ? poseAt(replay, time) : null, [replay, time])
   const events = useMemo(() => replay ? matchEvents(replay) : [], [replay])
@@ -196,9 +199,11 @@ function App() {
 
   return <div className="shell">
     <aside className="rail">
-      <div className="brand"><div className="brand-mark"><span>R</span></div><div><strong>REPLAY<span>ROOM</span></strong><small>THE GAME, REIMAGINED</small></div></div>
+      <div className="brand"><div className="brand-mark"><span>A</span></div><div><strong>AFL<span>HUB</span></strong><small>THE GAME, REIMAGINED</small></div></div>
       <div className="rail-section-label">WORKSPACE</div>
-      <button className="rail-item selected" type="button"><Activity size={18} /> Match replay <span className="rail-item-indicator" /></button>
+      <button className={`rail-item ${tab === 'game' ? 'selected' : ''}`} type="button" onClick={() => setTab('game')}><Play size={18} /> Game {tab === 'game' && <span className="rail-item-indicator" />}</button>
+      <button className={`rail-item ${tab === 'replay' ? 'selected' : ''}`} type="button" onClick={() => setTab('replay')}><Activity size={18} /> Replay {tab === 'replay' && <span className="rail-item-indicator" />}</button>
+      {tab === 'replay' && <>
       <button className="rail-item" type="button" onClick={() => fileInput.current?.click()}><Upload size={18} /> Import replay</button>
       <input ref={fileInput} type="file" accept=".jsonl,.txt" hidden onChange={(event) => { void importFile(event.target.files?.[0]); event.target.value = '' }} />
       <div className="rail-divider" />
@@ -213,12 +218,13 @@ function App() {
         <div className="match-card-art"><span className="art-grid" /><span className="art-ball" /><span className="art-title">MATCH<br />DAY <em>{selectedGame === 'cup-final' ? '02' : '01'}</em></span></div>
         <div className="match-card-copy"><span className="status-dot" /> FULL MATCH REPLAY <strong>{teamA} <span>vs</span> {teamB}</strong><small>{replay?.frames[0]?.state.team_A.length ?? 8}-a-side · {clock(replay?.header.seconds ?? 240)} duration</small></div>
       </div>
+      </>}
       <div className="rail-grow" />
       <div className="rail-tip"><span className="tip-symbol">✦</span><strong>Get closer to the action</strong><p>Select a player on the field to follow their every move.</p><button type="button" onClick={() => setShowHelp(true)}>VIEW CONTROLS <ArrowRight size={14} /></button></div>
       <button className="rail-footer" type="button" onClick={() => setShowHelp(true)}><CircleHelp size={17} /> How to use <ChevronRight size={15} /></button>
     </aside>
 
-    <main className="main">
+    {tab === 'game' ? <GameView /> : <main className="main">
       <header className="topbar"><div className="breadcrumbs">REPLAYS <ChevronRight size={13} /> <strong>{fileName.replaceAll('_', ' ')}</strong></div><div className="top-actions"><span className="live-indicator"><span /> INTERACTIVE REPLAY</span><button title="Import JSONL replay" type="button" onClick={() => fileInput.current?.click()}><Upload size={16} /> <span>Import JSONL</span></button><button className="icon-button" title="Help" type="button" onClick={() => setShowHelp(true)}><CircleHelp size={19} /></button></div></header>
 
       <div className="content">
@@ -252,8 +258,8 @@ function App() {
           </aside>
         </div>
       </div>
-    </main>
-    {showHelp && <div className="modal-backdrop" onClick={() => setShowHelp(false)}><div className="help-modal" role="dialog" aria-modal="true" aria-label="Replay controls" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" onClick={() => setShowHelp(false)}>×</button><span className="eyebrow">YOUR REPLAY, YOUR RULES</span><h2>Take the best seat<br /><em>in the house.</em></h2><p>Choose Broadcast to follow the play, Aerial for the full field, Free cam to explore, or On-ball to orbit the ball up close. Click a player to track them in Broadcast.</p><div className="help-row"><span>SPACE</span> Play or pause</div><div className="help-row"><span>← / →</span> Seek one second</div><div className="help-row"><span>SHIFT + ← / →</span> Seek five seconds</div><div className="help-row"><span>DRAG / SCROLL</span> Orbit and zoom in Free cam or On-ball</div><button className="help-cta" type="button" onClick={() => setShowHelp(false)}>BACK TO THE MATCH <ArrowRight size={17} /></button></div></div>}
+    </main>}
+    {tab === 'replay' && showHelp && <div className="modal-backdrop" onClick={() => setShowHelp(false)}><div className="help-modal" role="dialog" aria-modal="true" aria-label="Replay controls" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" onClick={() => setShowHelp(false)}>×</button><span className="eyebrow">YOUR REPLAY, YOUR RULES</span><h2>Take the best seat<br /><em>in the house.</em></h2><p>Choose Broadcast to follow the play, Aerial for the full field, Free cam to explore, or On-ball to orbit the ball up close. Click a player to track them in Broadcast.</p><div className="help-row"><span>SPACE</span> Play or pause</div><div className="help-row"><span>← / →</span> Seek one second</div><div className="help-row"><span>SHIFT + ← / →</span> Seek five seconds</div><div className="help-row"><span>DRAG / SCROLL</span> Orbit and zoom in Free cam or On-ball</div><button className="help-cta" type="button" onClick={() => setShowHelp(false)}>BACK TO THE MATCH <ArrowRight size={17} /></button></div></div>}
     <div className="mobile-hint"><Expand size={15} /> Best experienced in landscape</div>
   </div>
 }

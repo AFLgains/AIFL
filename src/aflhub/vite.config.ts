@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/replayhub/',
+  base: '/aflhub/',
   server: {
     port: 5173,
     proxy: { '/api': 'http://127.0.0.1:8765' },

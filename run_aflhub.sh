@@ -4,10 +4,32 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND="$ROOT/src/aflhub"
 PYTHON="$ROOT/.venv/bin/python"
-REPLAYHUB_PORT="${REPLAYHUB_PORT:-5173}"
+AFLHUB_PORT="${AFLHUB_PORT:-5173}"
 
 command -v python3 >/dev/null || { printf 'Python 3 is required.\n' >&2; exit 1; }
 command -v npm >/dev/null || { printf 'Node.js and npm are required.\n' >&2; exit 1; }
+command -v lsof >/dev/null || { printf 'lsof is required to clear occupied ports.\n' >&2; exit 1; }
+
+clear_port() {
+  local port="$1" pids attempt
+  pids="$(lsof -nP -tiTCP:"$port" -sTCP:LISTEN || true)"
+  [[ -n "$pids" ]] || return 0
+
+  printf 'Stopping processes listening on port %s: %s\n' "$port" "${pids//$'\n'/ }"
+  while IFS= read -r pid; do
+    kill "$pid" 2>/dev/null || true
+  done <<< "$pids"
+
+  for ((attempt = 0; attempt < 50; attempt++)); do
+    [[ -z "$(lsof -nP -tiTCP:"$port" -sTCP:LISTEN || true)" ]] && return 0
+    sleep 0.1
+  done
+  printf 'Port %s is still in use.\n' "$port" >&2
+  return 1
+}
+
+clear_port 8765
+clear_port "$AFLHUB_PORT"
 
 if [[ ! -x "$PYTHON" ]]; then
   python3 -m venv "$ROOT/.venv"
@@ -33,11 +55,11 @@ trap 'exit 143' TERM
 
 (cd "$ROOT" && exec "$PYTHON" afl.py app --no-browser) &
 backend_pid=$!
-(cd "$FRONTEND" && exec ./node_modules/.bin/vite --host 127.0.0.1 --port "$REPLAYHUB_PORT" --strictPort) &
+(cd "$FRONTEND" && exec ./node_modules/.bin/vite --host 127.0.0.1 --port "$AFLHUB_PORT" --strictPort) &
 frontend_pid=$!
 
 printf 'AIFL backend:  http://127.0.0.1:8765\n'
-printf 'Replayhub:     http://127.0.0.1:%s/replayhub/\n' "$REPLAYHUB_PORT"
+printf 'AFLHub:       http://127.0.0.1:%s/aflhub/\n' "$AFLHUB_PORT"
 printf 'Press Ctrl-C to stop both.\n'
 
 while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$frontend_pid" 2>/dev/null; do
