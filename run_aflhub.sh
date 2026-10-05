@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FRONTEND="$ROOT/src/replayhub"
+FRONTEND="$ROOT/src/aflhub"
 PYTHON="$ROOT/.venv/bin/python"
 REPLAYHUB_PORT="${REPLAYHUB_PORT:-5173}"
 
