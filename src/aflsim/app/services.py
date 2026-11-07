@@ -20,6 +20,7 @@ _APPGAME = contextvars.ContextVar("aflsim_app_game", default=DEFAULT_GAME)   # s
 NAME_RE = re.compile(r"^[a-z0-9_]+(/[a-z0-9_]+)*$")
 EDITABLE_ROOTS = ("community", "drafts")                                   # new code bots go here; the ladder is history
 LLM_TYPES = {"jev": ["backend", "model", "prompt", "x_step", "y_step", "sample"],
+             "decisions": ["backend", "model", "prompt", "x_step", "y_step", "sample"],
              "llm": ["provider", "temperature", "reasoning_effort", "cache"],
              "coached": ["coach", "player", "pack", "coach_every", "reasoning_effort", "cache"]}
 _CACHE = {}

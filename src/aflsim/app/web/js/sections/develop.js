@@ -112,7 +112,7 @@ async function newLLM(pane) {
   build();
   clear(pane, h("div.card.stack",
     h("h2", { style: { margin: 0 } }, "New LLM bot"),
-    h("div.muted", "jev: TypeSafe's classifier picks each player's x, y and speed · llm: one model plays the whole team · coached: a coach model plans, a player model acts. Keys come from the repo's .env."),
+    h("div.muted", "jev: TypeSafe's classifier picks each player's x, y and speed · decisions: OpenAI's Decisions API asked the same questions as Jev · llm: one model plays the whole team · coached: a coach model plans, a player model acts. Keys come from the repo's .env."),
     h("div.row", field("name (llm:<name>)", name), field("type", type), field("comment", comment)),
     fields, h("h3", "bots/" + window.AFL_META.game + "/llm/" + "<name>.toml"), preview,
     h("div.row", h("button.btn", { onclick: async () => {

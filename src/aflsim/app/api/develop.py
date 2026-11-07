@@ -38,6 +38,7 @@ def source(spec: str):
 def templates():
     return {"code": S.code_template(), "llm_types": S.LLM_TYPES,
             "llm_examples": {"jev": {"backend": "http", "model": "jev-1.13.0", "prompt": "v3", "x_step": 10, "y_step": 10, "sample": False},
+                             "decisions": {"backend": "openai", "model": "gpt-6-luna", "prompt": "v3", "x_step": 10, "y_step": 10, "sample": False},
                              "llm": {"provider": "openai:gpt-5.6-terra", "temperature": 1.0, "reasoning_effort": "low", "cache": True},
                              "coached": {"coach": "gpt-5.6-terra", "player": "deepseek:deepseek-chat", "pack": "ric", "coach_every": 12.0, "cache": True}}}
 

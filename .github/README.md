@@ -81,3 +81,7 @@ python afl.py --game afl18 ...    python afl.py --engine 1 ...                  
 ```
 
 `python afl.py <command> --help` explains every option.
+
+## Support
+
+If you enjoy afl_sim and want to support the project, you can [buy me a coffee](https://buymeacoffee.com/aflgains).

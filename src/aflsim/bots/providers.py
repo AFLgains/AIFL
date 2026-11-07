@@ -304,3 +304,64 @@ class FakeProvider(Provider):
             else:
                 acts.append({"player": p["id"], "action": "MOVE", "target": [min(max(p["pos"][0] + (20 if goal_x > 45 else -20), 5), 85), p["pos"][1]]})
         return acts
+
+
+# ------------------------------------------------------------------ OpenAI's Decisions API (typed answers, not text)
+def key_files():
+    """Where API keys are looked for: the repo's .env, then the file named by AFLSIM_ENV_FILE, if any (set it in the
+    environment or in the repo's .env). Values are read into the environment only; never printed or written."""
+    from aflsim.paths import home
+    repo = os.path.join(home(), ".env")
+    load_env((repo,))
+    return (repo, os.environ.get("AFLSIM_ENV_FILE"))
+
+
+DECISIONS_MODEL = "gpt-6-luna"                    # the only model the endpoint serves (November 2026)
+DECISIONS_PRICE_PER_M_INPUT = 0.10                # USD per million input tokens (published launch price; an estimate, not a bill)
+
+
+class OpenAIDecisions:
+    """POST /v1/decisions: the input plus up to 400 questions (predicate / choice / score), answered in order with a
+    probability for every option, in one call. Plain HTTPS, no SDK. Retries 429 / 5xx / network errors with bounded
+    backoff; auth, validation and quota errors are raised at once (the match runner stops the run on them)."""
+
+    MAX_QUESTIONS = 400
+    MAX_CHOICES = 255
+
+    def __init__(self, model=DECISIONS_MODEL, api_key=None, base_url="https://api.openai.com/v1", timeout=60.0, max_retries=4):
+        load_env(key_files())
+        self.model = model; self.timeout = timeout; self.max_retries = max_retries
+        self.url = os.environ.get("AFLSIM_OPENAI_URL", base_url).rstrip("/") + "/decisions"
+        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        if not self.api_key:
+            raise SystemExit("OPENAI_API_KEY not set: add it to the repo's .env (or use the mock backend)")
+
+    def decide(self, input, questions: list, prompt_cache_key: str | None = None) -> tuple[dict, dict]:
+        """Returns (the Decision object as sent back, info: latency, tokens, attempts)."""
+        if not 1 <= len(questions) <= self.MAX_QUESTIONS:
+            raise ValueError("the Decisions API takes 1-%d questions, not %d" % (self.MAX_QUESTIONS, len(questions)))
+        body = {"model": self.model, "input": input, "questions": questions}
+        if prompt_cache_key:
+            body["prompt_cache_key"] = prompt_cache_key[:64]
+        data = json.dumps(body).encode("utf-8"); delay = 1.0
+        for attempt in range(self.max_retries + 1):
+            req = urllib.request.Request(self.url, data=data, method="POST",
+                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + self.api_key})
+            t0 = time.time()
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                    out = json.loads(r.read().decode("utf-8"))
+                u = out.get("usage") or {}
+                return out, {"latency_s": time.time() - t0, "input_tokens": int(u.get("input_tokens") or 0),
+                             "cached_tokens": int((u.get("input_tokens_details") or {}).get("cached_tokens") or 0),
+                             "output_tokens": int(u.get("output_tokens") or 0), "model": out.get("model"), "attempts": attempt + 1}
+            except urllib.error.HTTPError as e:
+                detail = e.read().decode("utf-8", "replace")[:500]
+                if (e.code not in (429, 500, 502, 503, 504) or attempt == self.max_retries or "insufficient_quota" in detail):
+                    raise RuntimeError("OpenAI Decisions HTTP %d: %s" % (e.code, detail)) from None
+                wait = float(e.headers.get("Retry-After") or delay)
+            except (urllib.error.URLError, TimeoutError) as e:
+                if attempt == self.max_retries:
+                    raise RuntimeError("OpenAI Decisions network error: %s" % e) from None
+                wait = delay
+            time.sleep(min(wait, 30.0)); delay *= 2
