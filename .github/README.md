@@ -60,6 +60,16 @@ cp src/aflsim/bots/botkit_template/my_bot.py bots/afl8/code/mine/my_bot.py
 The guide — the contract, the state your bot sees, the orders it gives, the base team you can build on, and how
 to test: **[docs/writing-bots.md](../docs/writing-bots.md)**.
 
+## The challenge: beat round_29a
+
+[`challenge/`](../challenge/README.md) publishes a strong AFL8 bot, `round_29a`, as a benchmark, and a grader. Can
+your bot win 55 % of 400 games against it? The grader also gives your Elo, with `round_29a` at 0. AFL18 has the
+same challenge, with `zoo:rules` as the benchmark.
+
+```bash
+python challenge/grade.py path/to/my_bot.py --quick
+```
+
 ## More
 
 - **[docs/app.md](../docs/app.md)** — the web app, section by section, and the controls for playing yourself.

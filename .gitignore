@@ -20,6 +20,7 @@
 !/afl.py
 !/run_app.bat
 !/LICENSE
+!/challenge/
 
 # the package: the engine, the match machinery, the bot tooling and the app
 !/src/
