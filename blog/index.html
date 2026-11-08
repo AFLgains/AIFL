@@ -28,7 +28,7 @@
     <p>Teams were ranked using an Elo score. To get extremely powerful teams (high Elo score), agent-driven hill climbing was used to evolve teams. Coding agents wrote changed copies of the best team, and a copy was kept only if it got a higher Elo.</p>
     <p>From these games, 1,620,741 positions were gathered and a neural network was developed that rates any position on the ground.</p>
     <p>Claude was then given a task: Given only historical play data on the team we're trying to beat and the aforementioned neural network as a scenario tool, infer the opposition's predominant play style and formulate a strategy to beat them.</p>
-    <p>Claude did this well. In every test, its plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games, without ever seeing that bot's code or playing against it. Along the way, Claude rebuilt each opponent as a practice bot from the data alone, predicted its own results before the real games, and changed its own advice when a test disagreed.</p>
+    <p>Claude did this well. In every test, its plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games, without ever seeing that bot's code or playing against it. Along the way, Claude rebuilt each opponent as a practice bot from the data alone, and predicted its own results before the real games.</p>
   </section>
 </header>
 
