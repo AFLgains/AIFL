@@ -20,6 +20,10 @@
   <dl class="byline"><dt>Author</dt><dd>Ric Porteous</dd><dt>Published</dt><dd>November 2026</dd><dt>Code</dt><dd><a href="https://github.com/AFLgains/AIFL">github.com/AFLgains/AIFL</a></dd></dl>
   <section class="tldr">
     <h2>TL;DR</h2>
+    <p>Given only historical game data and a position-rating tool, Claude studied how three teams played Australian Rules Football and found their weaknesses. It explained its findings in a scouting report for each team. Then it showed that its analysis worked: it changed our team's code, and our team's win rate against each opponent increased substantially.</p>
+  </section>
+  <section class="intro">
+    <h2 class="sec" id="intro">Introduction</h2>
     <p>Imagine you were an opposition analyst for a football team.</p>
     <p>A good opposition analyst watches film of the opposition, works out how a team plays, finds what it does badly, and tells their own side what to change in order to increase the chance of winning the next game. They never see the other team's notes / playbook or anything else. They infer it from the limited resources they have.</p>
     <p>The central question of this research was: could Claude Code be a good opposition analyst?</p>
@@ -28,7 +32,7 @@
     <p>Teams were ranked using an Elo score. To get extremely powerful teams (high Elo score), agent-driven hill climbing was used to evolve teams. Coding agents wrote changed copies of the best team, and a copy was kept only if it got a higher Elo.</p>
     <p>From these games, 1,620,741 positions were gathered and a neural network was developed that rates any position on the ground.</p>
     <p>Claude was then given a task: Given only historical play data on the team we're trying to beat and the aforementioned neural network as a scenario tool, infer the opposition's predominant play style and formulate a strategy to beat them.</p>
-    <p>The answer was yes. In every test, Claude's plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games. It did this without ever seeing that bot's code or playing against it. Claude also showed some interesting behaviour: it rebuilt each opponent as a practice bot from the data alone, it predicted its own results before the real games, it changed its own advice when a test disagreed, and it found an error in our rules sheet.</p>
+    <p>Claude did this well. In every test, its plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games, without ever seeing that bot's code or playing against it. Along the way, Claude rebuilt each opponent as a practice bot from the data alone, and predicted its own results before the real games.</p>
   </section>
 </header>
 
@@ -46,18 +50,9 @@
   <div class="tz"><span class="step">TEST</span><span class="task">Claude changes its own team and plays the real opponent</span><span class="big">3% → 78%</span><span class="note">win rate against the champion, which Claude never played</span></div>
 </div>
 
-<p>So in summary, the five components of this project were:</p>
-<ul>
-  <li>Building a football engine</li>
-  <li>Creating powerful teams</li>
-  <li>Creating an analysis tool that could rate the quality of a position</li>
-  <li>Using Claude as an analyst to study an opposition</li>
-  <li>Seeing if Claude's predictions help</li>
-</ul>
-
 <h2 class="sec" id="build">Game mechanics</h2>
-<p>The game engine is a simplified form of Australian football: eight players a side, two midfielders, three defenders and three forwards, playing four-minute matches on an oval. Goals are worth six and behinds one. The engine handles the whole contest: running and energy, kicks with real flight and error, marks and spoils, ground balls, tackles, holding the ball, and set plays with a man on the mark.</p>
-<p>I wanted it close enough to the real sport that football ideas transfer, without being so detailed that nothing can be learned from it. A kick travels at about 22 metres a second, so there's a real decision about whether a lead will still be open when the ball arrives. Sprinting empties a player in seconds. Bounce the ball every 15 metres or give it up. Small rules like these are what make tactics matter.</p>
+<p>The game engine is a simplified form of Australian football: eight players a side, two midfielders, three defenders and three forwards, playing four-minute matches on an oval. Goals are worth six and behinds one. The engine handles the whole contest: running and energy, kicks with real flight and error, marks and spoils, ground balls, tackles, holding the ball, and set plays with a man on the mark. It does not include every rule of the real game. There are no ruck contests (a ball-up is simply a loose ball between two midfielders), no interchange bench and no quarters. The only free kicks are for holding the ball and for a kick that goes out on the full, so there are no free kicks for high contact, a push in the back or deliberate out of bounds, and no 50-metre penalties. Players also cannot bump or shepherd an opponent.</p>
+<p>I wanted it close enough to the real sport that football ideas transfer, without being so detailed that nothing can be learned from it. A kick travels at about 22 metres a second, so a kick to a leading player takes time to arrive, and the player must still be free when it lands. A player who sprints runs out of energy in about 7 seconds and is then slower, so a team cannot sprint everywhere. A player who runs with the ball must bounce it every 15 metres, and about 30% of bounces are fumbled. Each of these rules forces a decision, and a team's tactics are the decisions it makes.</p>
 <p>Pressure is incorporated. Every opponent near the ball carrier adds to a pressure score, and that score makes kicks, handballs, marks and gathers worse. It falls away quickly with distance, so a defender who gets three metres closer can change the whole contest.</p>
 
 <figure>
@@ -119,7 +114,7 @@
     <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--a)"></i>Climb bots</span><span><i style="background:var(--ink-3)"></i>Earlier red and blue teams</span></div>
     <div id="climb"></div>
   </div>
-  <figcaption><b>Figure 4. The climb.</b> All clubs fitted together from the archived 120-second ladder on the first engine version, with the five hand-written clubs averaging 1,500. The band leaves out the weakest of those, <span class="mono">zoo:keeper</span> at 1,316, and <span class="mono">round_29b</span>, which crashes on every decision, is off the chart. Hover over a dot for the bot.</figcaption>
+  <figcaption><b>Figure 4. The climb.</b> The ratings are scaled so that the five hand-written clubs average 1,500. The shaded band shows the range of four of them. The fifth, <span class="mono">zoo:keeper</span>, is much weaker (1,316) and is below the chart. One bot from the climb, <span class="mono">round_29b</span>, crashed on every decision and is also below the chart. Hover over a dot to see the bot.</figcaption>
 </figure>
 
 <p>The best team, <span class="mono">round_36a</span>, was then selected as one of the opponents in the analyst experiment. Its strategy is a long stack of ideas added and evolved progressively one at a time: who reaches the landing spot first, which kicks are worth taking, endgame shot selection when a behind would win the match. It's good in ways that are difficult to see from outside, which makes it the perfect candidate for study.</p>
@@ -303,7 +298,7 @@
 <div class="exp-head"><span class="exp-num">Experiment 2</span><h3>The Eagles: a clever team</h3></div>
 <p>Like the Giants, the Eagles were a hand-written team, but slightly stronger. Before any change, the Power won 53.0% of its games against the Eagles.</p>
 <div class="exp-head"><span class="exp-num">Experiment 3</span><h3>The Sharks: the champion</h3></div>
-<p>The Sharks were the champion of the evolved teams. Before any change, the Power won only 13 of 400 games against them (3.4%).</p>
+<p>The Sharks were the champion of the evolved teams (<span class="mono">round_36a</span>). Before any change, the Power won only 13 of 400 games against them (3.4%).</p>
 <div class="exp-head"><span class="exp-num">Experiment 4</span><h3>Bonus: Unlimited change to the Power</h3></div>
 <p>The last experiment removed the limit. A new session got the same Sharks scouting report, the code of the Power and the practice engine. This time Claude could change the Power as much as it wanted, or write a new program. The goal was the same: beat the Sharks. The other rules were also the same: Claude never saw the Sharks' code, and it could practise only against its own model of the Sharks. This is like a coach with a full off-season, not one week.</p>
 <h2 class="sec" id="results">Results</h2>
@@ -392,7 +387,7 @@
   <li><b>Take the set shot.</b> The Power never took a set shot against the Sharks: 0 of its 71 shots. From 35–45 m, a set shot from a mark was worth 2.93 points, and playing on was worth 1.73.</li>
   <li><b>Wait at kick-ins.</b> The Power kicked in after 0.4 s and kept the ball 58% of the time. The strong clubs and the Sharks wait about 2 s, and keep it 73–92% of the time.</li>
   <li><b>Keep the defenders on the goal side.</b> The Sharks' forwards never come back: they stay 23–26 m ahead of the ball. So the Power's defenders always stay between them and the goal, and one player sweeps behind.</li>
-  <li><b>Save energy.</b> Players jog to their positions, and sprint only when it matters. In practice games, this was the largest single gain (see below).</li>
+  <li><b>Save energy.</b> Players jog to their positions, and sprint only when it matters. In practice games, this was the largest single gain: more jogging raised the win rate against its model from 73% to 95%.</li>
 </ul>
 <h3>Other things Claude did</h3>
 <p><b>It rebuilt each opponent as a practice opponent.</b> Claude could not play the real opponent. So in each plan session it wrote its own copy of the opponent as a bot, from its scouting report only, and tested its changes against that copy. It then checked each copy against the 20 real games between the Power and that opponent. The copies matched many details of the real play:</p>
@@ -425,7 +420,6 @@
     </tbody>
   </table></div>
 <p><b>It changed its own advice when a test disagreed.</b> The Sharks report recommended that the Power's forwards lead for the ball. In the practice games of the plan with no limit, leads made the plan worse: 91% wins with leads, 98% without. Claude found the cause: the Sharks' defenders are faster than the Power's forwards (speed rating 0.66 against 0.58). So a lead does not get the forward free; it only makes him tired. Claude wrote: "Space comes from where the ball is kicked, not from forwards running."</p>
-<p><b>It found an error in our rules sheet.</b> The rules sheet said that a steady run holds a player's energy. In its practice games, Claude saw that a run drains energy at about half the rate of a sprint, so a player who runs all the time is empty in about 14 s. It changed the plan so that players jog when they can. This was the largest single gain in its tests: more jogging raised the win rate against its model from 73% to 95%.</p>
 <h2 class="sec" id="conclusion">Conclusion</h2>
 <p>Claude read one season of game data, described how each opponent plays, and found where the Power lost. Each report led to a plan. With three small changes, each plan increased the win rate against its opponent: by 16 and 28 points against the two mid-range clubs, and by 25 points against the champion. Each plan gained more against its own opponent than against other clubs, most clearly against the Eagles. With no limit, Claude wrote a program that beats the champion in 78% of games. It never saw the champion's code and never played it. Claude also predicted each result well, and it said each time that the real opponent would be harder than its practice model.</p>
 <figure class="wide">
