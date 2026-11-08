@@ -25,6 +25,7 @@
 !/run_app.sh
 !/LICENSE
 !/challenge/
+!/blog/
 
 # the package: the engine, the match machinery, the bot tooling and the app
 !/src/
