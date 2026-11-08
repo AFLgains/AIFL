@@ -28,7 +28,7 @@
     <p>Teams were ranked using an Elo score. To get extremely powerful teams (high Elo score), agent-driven hill climbing was used to evolve teams. Coding agents wrote changed copies of the best team, and a copy was kept only if it got a higher Elo.</p>
     <p>From these games, 1,620,741 positions were gathered and a neural network was developed that rates any position on the ground.</p>
     <p>Claude was then given a task: Given only historical play data on the team we're trying to beat and the aforementioned neural network as a scenario tool, infer the opposition's predominant play style and formulate a strategy to beat them.</p>
-    <p>The answer was yes. In every test, Claude's plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games. It did this without ever seeing that bot's code or playing against it. Claude also showed some interesting behaviour: it rebuilt each opponent as a practice bot from the data alone, it predicted its own results before the real games, it changed its own advice when a test disagreed, and it found an error in our rules sheet.</p>
+    <p>Claude did this well. In every test, its plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games, without ever seeing that bot's code or playing against it. Along the way, Claude rebuilt each opponent as a practice bot from the data alone, predicted its own results before the real games, and changed its own advice when a test disagreed.</p>
   </section>
 </header>
 
@@ -392,7 +392,7 @@
   <li><b>Take the set shot.</b> The Power never took a set shot against the Sharks: 0 of its 71 shots. From 35–45 m, a set shot from a mark was worth 2.93 points, and playing on was worth 1.73.</li>
   <li><b>Wait at kick-ins.</b> The Power kicked in after 0.4 s and kept the ball 58% of the time. The strong clubs and the Sharks wait about 2 s, and keep it 73–92% of the time.</li>
   <li><b>Keep the defenders on the goal side.</b> The Sharks' forwards never come back: they stay 23–26 m ahead of the ball. So the Power's defenders always stay between them and the goal, and one player sweeps behind.</li>
-  <li><b>Save energy.</b> Players jog to their positions, and sprint only when it matters. In practice games, this was the largest single gain (see below).</li>
+  <li><b>Save energy.</b> Players jog to their positions, and sprint only when it matters. In practice games, this was the largest single gain: more jogging raised the win rate against its model from 73% to 95%.</li>
 </ul>
 <h3>Other things Claude did</h3>
 <p><b>It rebuilt each opponent as a practice opponent.</b> Claude could not play the real opponent. So in each plan session it wrote its own copy of the opponent as a bot, from its scouting report only, and tested its changes against that copy. It then checked each copy against the 20 real games between the Power and that opponent. The copies matched many details of the real play:</p>
@@ -425,7 +425,6 @@
     </tbody>
   </table></div>
 <p><b>It changed its own advice when a test disagreed.</b> The Sharks report recommended that the Power's forwards lead for the ball. In the practice games of the plan with no limit, leads made the plan worse: 91% wins with leads, 98% without. Claude found the cause: the Sharks' defenders are faster than the Power's forwards (speed rating 0.66 against 0.58). So a lead does not get the forward free; it only makes him tired. Claude wrote: "Space comes from where the ball is kicked, not from forwards running."</p>
-<p><b>It found an error in our rules sheet.</b> The rules sheet said that a steady run holds a player's energy. In its practice games, Claude saw that a run drains energy at about half the rate of a sprint, so a player who runs all the time is empty in about 14 s. It changed the plan so that players jog when they can. This was the largest single gain in its tests: more jogging raised the win rate against its model from 73% to 95%.</p>
 <h2 class="sec" id="conclusion">Conclusion</h2>
 <p>Claude read one season of game data, described how each opponent plays, and found where the Power lost. Each report led to a plan. With three small changes, each plan increased the win rate against its opponent: by 16 and 28 points against the two mid-range clubs, and by 25 points against the champion. Each plan gained more against its own opponent than against other clubs, most clearly against the Eagles. With no limit, Claude wrote a program that beats the champion in 78% of games. It never saw the champion's code and never played it. Claude also predicted each result well, and it said each time that the real opponent would be harder than its practice model.</p>
 <figure class="wide">
