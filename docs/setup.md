@@ -21,6 +21,11 @@ python -m venv .venv                       # a private Python for this project
 
 (On Windows, if `python` isn't found, use the launcher: `py -3.13 -m venv .venv`.)
 
+On Windows you can also double-click **`setup.bat`**. It finds Python, creates `.venv` and installs the exact package
+versions in `requirements.lock`. This is a larger install (it includes PyTorch, which the research tools use).
+`run_app.bat` runs `setup.bat` for you when there is no `.venv`, and moves aside a `.venv` that was copied from
+another computer and does not work.
+
 What that installs:
 
 | Group | Packages | For |

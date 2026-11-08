@@ -96,9 +96,16 @@ class Store:
     def set_log(self, match_id: int, log_path: str):
         self.db.execute("UPDATE matches SET log_path=? WHERE id=?", (log_path, match_id)); self.db.commit()
 
+    @staticmethod
+    def _row(r) -> dict:
+        d = dict(r)
+        if d.get("log_path"):
+            d["log_path"] = paths.resolve(d["log_path"])                    # the folder may have moved (another computer)
+        return d
+
     def match(self, match_id: int) -> dict | None:
         r = self.db.execute("SELECT * FROM matches WHERE id=?", (match_id,)).fetchone()
-        return dict(r) if r else None
+        return self._row(r) if r else None
 
     def matches(self, bot: str | None = None, tournament_id: int | None = None, seconds: float | None = None, engine_version: int | None = None,
                 since: str | None = None, source: str | None = None, limit: int | None = None, newest_first=False) -> list[dict]:
@@ -118,7 +125,7 @@ class Store:
         q += " ORDER BY id %s" % ("DESC" if newest_first else "ASC")
         if limit:
             q += " LIMIT %d" % int(limit)
-        return [dict(r) for r in self.db.execute(q, args)]
+        return [self._row(r) for r in self.db.execute(q, args)]
 
     def count(self) -> int:
         return self.db.execute("SELECT count(*) FROM matches").fetchone()[0]

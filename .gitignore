@@ -12,6 +12,7 @@
 
 # --- 2. ... then publish these
 !/.gitignore
+!/.gitattributes
 !/.env.example
 !/.github/
 !/docs/
@@ -19,6 +20,7 @@
 !/requirements.lock
 !/afl.py
 !/run_app.bat
+!/setup.bat
 !/LICENSE
 !/challenge/
 
