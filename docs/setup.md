@@ -21,10 +21,18 @@ python -m venv .venv                       # a private Python for this project
 
 (On Windows, if `python` isn't found, use the launcher: `py -3.13 -m venv .venv`.)
 
-On Windows you can also double-click **`setup.bat`**. It finds Python, creates `.venv` and installs the exact package
-versions in `requirements.lock`. This is a larger install (it includes PyTorch, which the research tools use).
-`run_app.bat` runs `setup.bat` for you when there is no `.venv`, and moves aside a `.venv` that was copied from
-another computer and does not work.
+Or use the setup script. It finds Python, creates `.venv` and installs the exact package versions in
+`requirements.lock`. This is a larger install (it includes PyTorch, which the research tools use; on Linux the script
+installs the smaller CPU build).
+
+| System | Setup | Start the app |
+|---|---|---|
+| Windows | double-click **`setup.bat`** | double-click **`run_app.bat`** |
+| Linux, macOS | `./setup.sh` | `./run_app.sh` |
+
+The start script runs the setup script for you when there is no `.venv`. It also moves aside a `.venv` that was
+copied from another computer and does not work, and installs packages that are missing. (The Linux and macOS
+scripts are not tested on those systems yet. If one fails, use the manual install above.)
 
 What that installs:
 

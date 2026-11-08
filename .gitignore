@@ -21,6 +21,8 @@
 !/afl.py
 !/run_app.bat
 !/setup.bat
+!/setup.sh
+!/run_app.sh
 !/LICENSE
 !/challenge/
 
