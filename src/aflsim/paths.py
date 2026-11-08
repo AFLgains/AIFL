@@ -19,6 +19,26 @@ def repo() -> str:
     return _REPO
 
 
+_ANCHORS = ("results", "experiments", "videos", "archive", "bots", "models", "data", "tournaments", "dist")
+
+
+def resolve(p: str | None) -> str | None:
+    """A stored path that may have been written on another computer, or with the folder somewhere else (the store keeps
+    full paths to game logs): as given if it exists, else the same file under this home / repo, found from its first
+    data folder (results/, experiments/...). Unchanged if neither exists."""
+    if not p or os.path.exists(p):
+        return p
+    parts = p.replace("\\", "/").split("/")
+    for i, part in enumerate(parts):
+        if part in _ANCHORS:
+            for root in (home(), _REPO):
+                cand = os.path.join(root, *parts[i:])
+                if os.path.exists(cand):
+                    return cand
+            break
+    return p
+
+
 def _mk(p):
     os.makedirs(p, exist_ok=True)
     return p
