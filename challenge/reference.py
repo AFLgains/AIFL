@@ -22,7 +22,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import grade                                                                          # noqa: E402
-from aflsim.bots.registry import bot_hash                                            # noqa: E402
 from aflsim.games import engine_version, get_game                                    # noqa: E402
 from aflsim.match.ladder import rating_errors                                        # noqa: E402
 from aflsim.match.rating import fit_ratings                                          # noqa: E402
@@ -62,7 +61,7 @@ def main(argv=None):
     out = {"game": game, "engine_version": engine_version(g), "seconds": grade.SECONDS, "seeds_per_pair": a.seeds,
            "both_ends": True, "seed0": SEED0, "games": len(rows), "anchors": anchors, "anchor_mean": 1500,
            "built": datetime.date.today().isoformat(), "errors": errors,
-           "bots": {lb: {"spec": bots[lb], "hash": bot_hash(grade.resolve(bots[lb]), game), "rating": round(ratings[lb], 1), "se": round(se[lb], 1)}
+           "bots": {lb: {"spec": bots[lb], "hash": grade.code_hash(grade.resolve(bots[lb]), game), "rating": round(ratings[lb], 1), "se": round(se[lb], 1)}
                     for lb in sorted(bots, key=lambda b: -ratings[b])}}
     path = grade.reference_path(game)
     with open(path, "w", encoding="utf-8") as f:

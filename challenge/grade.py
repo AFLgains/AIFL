@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import math
 import os
@@ -27,7 +28,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from aflsim.bots.base import TeamController                                          # noqa: E402
-from aflsim.bots.registry import bot_hash, load_bot                                  # noqa: E402
+from aflsim.bots.registry import load_bot                                  # noqa: E402
 from aflsim.engine import run_match                                                  # noqa: E402
 from aflsim.exec import Serial, make_executor                                        # noqa: E402
 from aflsim.games import engine_version, get_game                                    # noqa: E402
@@ -50,6 +51,24 @@ def reference_path(game):
 def resolve(spec):
     """A reference-pool spec ("zoo:x", or a path relative to the repository) as load_bot takes it."""
     return spec if spec.startswith("zoo:") else os.path.join(ROOT, spec)
+
+
+def code_hash(spec, game):
+    """Fingerprint of a bot's code with line endings made the same (CRLF and LF give one hash), so a pool built on
+    one system checks on any system. The zoo bots are afl8's rules_zoo.py and rules_ai.py (and, for AFL18, the
+    selection in afl18's controllers/zoo.py)."""
+    if spec.startswith("zoo:"):
+        games = os.path.dirname(os.path.dirname(os.path.abspath(get_game(game).__file__)))
+        files = [os.path.join(games, "afl8", "controllers", "rules_zoo.py"), os.path.join(games, "afl8", "controllers", "rules_ai.py")]
+        if game == "afl18":
+            files.append(os.path.join(games, "afl18", "controllers", "zoo.py"))
+    else:
+        files = [spec]
+    h = hashlib.sha256()
+    for f in files:
+        with open(f, "rb") as fh:
+            h.update(fh.read().replace(b"\r\n", b"\n"))
+    return h.hexdigest()[:16]
 
 
 class Guarded(TeamController):
@@ -141,7 +160,7 @@ def main(argv=None):
     game = a.game; g = get_game(game); chal = os.path.abspath(a.bot); target = TARGETS[game]
     official = (a.seeds == SEEDS and a.elo_seeds == ELO_SEEDS and not a.no_rating)
     report = {"game": game, "engine_version": engine_version(g), "seconds": SECONDS, "bot": os.path.basename(chal),
-              "bot_hash": bot_hash(chal, game), "seed0": a.seed0, "seeds": a.seeds, "full_grade": official, "failures": []}
+              "bot_hash": code_hash(chal, game), "seed0": a.seed0, "seeds": a.seeds, "full_grade": official, "failures": []}
     fail = report["failures"]
 
     ref = None
@@ -151,7 +170,7 @@ def main(argv=None):
         if ref["engine_version"] != engine_version(g) or ref["seconds"] != SECONDS:
             raise SystemExit("The reference pool was built for engine v%s, %s s games: rebuild it (challenge/reference.py)." % (ref["engine_version"], ref["seconds"]))
         for label, b in ref["bots"].items():
-            if bot_hash(resolve(b["spec"]), game) != b["hash"]:
+            if code_hash(resolve(b["spec"]), game) != b["hash"]:
                 raise SystemExit("The reference bot %s has changed since the pool was rated: rebuild it (challenge/reference.py)." % label)
 
     print("%s | engine v%s | %d s games | bot %s (%s)" % (game, engine_version(g), SECONDS, report["bot"], report["bot_hash"][:12]))
