@@ -1,0 +1,387 @@
+{
+ "rows": {
+  "giants": {
+   "club": "Giants",
+   "target": "zoo:rules",
+   "limit": "3 changes",
+   "changes": 3,
+   "lines": 7,
+   "before": {
+    "w": 203,
+    "l": 174,
+    "d": 23,
+    "score": 0.53625,
+    "margin": 0.595
+   },
+   "plan": {
+    "w": 271,
+    "l": 112,
+    "d": 17,
+    "score": 0.69875,
+    "margin": 7.1925
+   },
+   "gain": 0.1625,
+   "gain_se": 0.03185350828362454,
+   "zoo": {
+    "before": 0.7125,
+    "plan": 0.8484375
+   },
+   "ladder": {
+    "before": 0.03854166666666667,
+    "plan": 0.140625
+   }
+  },
+  "eagles": {
+   "club": "Eagles",
+   "target": "zoo:ontario",
+   "limit": "3 changes",
+   "changes": 3,
+   "lines": 3,
+   "before": {
+    "w": 206,
+    "l": 182,
+    "d": 12,
+    "score": 0.53,
+    "margin": 1.145
+   },
+   "plan": {
+    "w": 318,
+    "l": 70,
+    "d": 12,
+    "score": 0.81,
+    "margin": 11.3925
+   },
+   "gain": 0.28,
+   "gain_se": 0.030311664297448318,
+   "zoo": {
+    "before": 0.7125,
+    "plan": 0.7859375
+   },
+   "ladder": {
+    "before": 0.03854166666666667,
+    "plan": 0.09166666666666667
+   }
+  },
+  "sharks": {
+   "club": "Sharks",
+   "target": "round_36a",
+   "limit": "3 changes",
+   "changes": 3,
+   "lines": 6,
+   "before": {
+    "w": 13,
+    "l": 386,
+    "d": 1,
+    "score": 0.03375,
+    "margin": -25.3775
+   },
+   "plan": {
+    "w": 110,
+    "l": 281,
+    "d": 9,
+    "score": 0.28625,
+    "margin": -7.2475
+   },
+   "gain": 0.2525,
+   "gain_se": 0.023481115432510597,
+   "zoo": {
+    "before": 0.7125,
+    "plan": 0.915625
+   },
+   "ladder": {
+    "before": 0.03854166666666667,
+    "plan": 0.40520833333333334
+   }
+  },
+  "sharks_open": {
+   "club": "Sharks",
+   "target": "round_36a",
+   "limit": "None",
+   "changes": 27,
+   "lines": 550,
+   "before": {
+    "w": 13,
+    "l": 386,
+    "d": 1,
+    "score": 0.03375,
+    "margin": -25.3775
+   },
+   "plan": {
+    "w": 307,
+    "l": 84,
+    "d": 9,
+    "score": 0.77875,
+    "margin": 7.9525
+   },
+   "gain": 0.745,
+   "gain_se": 0.022317205114222426,
+   "zoo": {
+    "before": 0.7125,
+    "plan": 1.0
+   },
+   "ladder": {
+    "before": 0.03854166666666667,
+    "plan": 0.8291666666666666
+   }
+  }
+ },
+ "zoo_clubs": [
+  "zoo:boundary",
+  "zoo:defence",
+  "zoo:keeper",
+  "zoo:lead",
+  "zoo:press",
+  "zoo:runner",
+  "zoo:spoiler",
+  "zoo:zone"
+ ],
+ "ladder_clubs": [
+  "ladder/climb/round_34a",
+  "ladder/climb/round_34b",
+  "ladder/climb/round_21a",
+  "ladder/climb/round_33a",
+  "ladder/climb/round_29a",
+  "ladder/climb/round_28c",
+  "ladder/climb/round_20b",
+  "ladder/climb/round_20a",
+  "ladder/climb/round_30a",
+  "ladder/climb/round_28a",
+  "ladder/climb/round_35a",
+  "ladder/climb/round_32a"
+ ],
+ "games_per_club": 40,
+ "cross": {
+  "giants_plan_v_eagles": {
+   "plan": 0.785,
+   "before": 0.53
+  },
+  "eagles_plan_v_giants": {
+   "plan": 0.76375,
+   "before": 0.53625
+  }
+ },
+ "diffs": {
+  "giants": [
+   {
+    "old": 18,
+    "new": 18,
+    "lines": [
+     [
+      " ",
+      ""
+     ],
+     [
+      "-",
+      "SHOT_RANGE = 38.0           # metres from goal: shoot from inside this"
+     ],
+     [
+      "+",
+      "SHOT_RANGE = 45.0           # metres from goal: shoot from inside this (v Giants: they concede long shots)"
+     ],
+     [
+      " ",
+      "FREE_SPACE = 3.0            # a teammate is \"free\" when no opponent is nearer than this"
+     ]
+    ],
+    "note": "Shoot from up to 45 m, not 38 m: the Giants let long shots through."
+   },
+   {
+    "old": 53,
+    "new": 53,
+    "lines": [
+     [
+      " ",
+      "                acts[pid] = act"
+     ],
+     [
+      "+",
+      "        else:                                  # v Giants: the nearest player of any line within 12 m closes their carrier"
+     ],
+     [
+      "+",
+      "            cpos = next(o for o in theirs if o[\"id\"] == carrier)[\"pos\"]"
+     ],
+     [
+      "+",
+      "            near = min((p for p in mine if not p.get(\"standing_the_mark\")), key=lambda p: self.dist(p[\"pos\"], cpos))"
+     ],
+     [
+      "+",
+      "            if self.dist(near[\"pos\"], cpos) <= 12.0:"
+     ],
+     [
+      "+",
+      "                acts[near[\"id\"]] = Action(near[\"id\"], \"TACKLE\", opponent=carrier)"
+     ],
+     [
+      " ",
+      "        free = [p for p in mine if p[\"id\"] not in acts]"
+     ]
+    ],
+    "note": "Close down the Giants' carrier: the nearest Power player within 12 m tackles. This came from a test with the rating tool."
+   },
+   {
+    "old": 85,
+    "new": 90,
+    "lines": [
+     [
+      " ",
+      "            d = self.dist(pos, target[\"pos\"])"
+     ],
+     [
+      "-",
+      "            spot = self.clip(self.ahead(target[\"pos\"][0], 3.0), target[\"pos\"][1])"
+     ],
+     [
+      "+",
+      "            spot = self.clip(target[\"pos\"][0], target[\"pos\"][1])   # v Giants: on him, not 3 m goal-side where their defender is"
+     ],
+     [
+      " ",
+      "            return Action(pid, \"KICK\", target=spot, power=self.power_for(me, d))"
+     ]
+    ],
+    "note": "Kick to the receiver, not 3 m in front of him: that is where the Giants' defender stands."
+   }
+  ],
+  "eagles": [
+   {
+    "old": 19,
+    "new": 19,
+    "lines": [
+     [
+      " ",
+      "SHOT_RANGE = 38.0           # metres from goal: shoot from inside this"
+     ],
+     [
+      "-",
+      "FREE_SPACE = 3.0            # a teammate is \"free\" when no opponent is nearer than this"
+     ],
+     [
+      "+",
+      "FREE_SPACE = 5.0            # v Eagles: their defenders sit ~3.3 m goal-side, so 3-5 m is not free (plan change 1)"
+     ],
+     [
+      " ",
+      "PRESSURE_RADIUS = 3.5       # an opponent this close puts the carrier under pressure"
+     ]
+    ],
+    "note": "A teammate is free only with no opponent within 5 m: the Eagles' defenders stand 3.3 m from their forward."
+   },
+   {
+    "old": 26,
+    "new": 26,
+    "lines": [
+     [
+      " ",
+      "DEF_DEPTH = 25.0            # defenders stand this far behind the ball"
+     ],
+     [
+      "-",
+      "FWD_DEPTH = 25.0            # forwards stand this far ahead of the ball"
+     ],
+     [
+      "+",
+      "FWD_DEPTH = 35.0            # v Eagles: forwards 10 m further ahead drag their man-markers deep (plan change 2)"
+     ],
+     [
+      " ",
+      "FWD_LEAD_SPOT = 30.0        # in the forward half, forwards lead to this distance from goal"
+     ]
+    ],
+    "note": "The forwards stand 35 m ahead of the ball, not 25 m, to pull the Eagles' man-markers deep."
+   },
+   {
+    "old": 143,
+    "new": 143,
+    "lines": [
+     [
+      " ",
+      "                return Action(p[\"id\"], \"TACKLE\", opponent=carrier)"
+     ],
+     [
+      "-",
+      "        spot = self.clip(self.ahead(self.bpos[0], -10.0), self.bpos[1] * 0.5)"
+     ],
+     [
+      "+",
+      "        spot = self.clip(self.ahead(self.bpos[0], -20.0), self.bpos[1] * 0.5)   # v Eagles: 20 m back, where their long kicks land (plan change 3)"
+     ],
+     [
+      " ",
+      "        return Action(p[\"id\"], \"MOVE\", target=spot, pace=\"run\")"
+     ]
+    ],
+    "note": "The covering midfielder stands 20 m behind the ball, not 10 m, where the Eagles' long kicks land."
+   }
+  ],
+  "sharks": [
+   {
+    "old": 19,
+    "new": 19,
+    "lines": [
+     [
+      " ",
+      "SHOT_RANGE = 38.0           # metres from goal: shoot from inside this"
+     ],
+     [
+      "-",
+      "FREE_SPACE = 3.0            # a teammate is \"free\" when no opponent is nearer than this"
+     ],
+     [
+      "+",
+      "FREE_SPACE = 7.0            # v Sharks: their defenders stand 2.7-3.1 m off our forwards; 3 m called covered men free"
+     ],
+     [
+      " ",
+      "PRESSURE_RADIUS = 3.5       # an opponent this close puts the carrier under pressure"
+     ]
+    ],
+    "note": "A teammate is free only with no opponent within 7 m: the Sharks' defenders stand 2.7\u20133.1 m from the Power's forwards."
+   },
+   {
+    "old": 85,
+    "new": 85,
+    "lines": [
+     [
+      " ",
+      "            d = self.dist(pos, target[\"pos\"])"
+     ],
+     [
+      "-",
+      "            spot = self.clip(self.ahead(target[\"pos\"][0], 3.0), target[\"pos\"][1])"
+     ],
+     [
+      "+",
+      "            v = target.get(\"vel\") or [0.0, 0.0]; ft = 0.8 + d / 22.0      # v Sharks: aim where the receiver will be"
+     ],
+     [
+      "+",
+      "            spot = self.clip(target[\"pos\"][0] + v[0] * ft, target[\"pos\"][1] + v[1] * ft)"
+     ],
+     [
+      " ",
+      "            return Action(pid, \"KICK\", target=spot, power=self.power_for(me, d))"
+     ],
+     [
+      "+",
+      "        held = self.ball.get(\"held_for_s\", 0.0) or 0.0      # v Sharks: no kick on and unpressured: take up to 0.8 s"
+     ],
+     [
+      "+",
+      "        if held < 0.8 and self.nearest_opponent(pos) >= PRESSURE_RADIUS:    # for a lead to open, not a short handball"
+     ],
+     [
+      "+",
+      "            return Action(pid, \"MOVE\", target=self.clip(self.ahead(pos[0], 10.0), pos[1] * 0.8), pace=\"run\")"
+     ],
+     [
+      " ",
+      "        mate = self.handball_target(me)"
+     ]
+    ],
+    "note": "Kick to where the receiver will be, not to where he stands. With no kick on and no opponent near, run on for up to 0.8 s before a short handball."
+   }
+  ]
+ }
+}

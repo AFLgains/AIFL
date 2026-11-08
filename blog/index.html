@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code can be a football analyst</title>
+<meta name="description" content="A physics engine, a league of evolved bots, a neural network that rates positions, and a test: give Claude Code the game film and see whether it can beat the opposition.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="col">
+  <div class="top"><a href="https://github.com/AFLgains/AIFL">AFLgains / AIFL</a><nav><a href="#build">Build</a><a href="#evolve">Evolve</a><a href="#predict">Predict</a><a href="#analyst">Analyse</a></nav></div>
+  <p class="kicker">Research blog</p>
+  <h1>Claude Code can be a football analyst</h1>
+  <p class="deck">I built a simplified Australian Rules Football game engine, developed a powerful team with agent-driven hill climbing, and then trained a neural network to score the play. Then I asked Claude to analyse past games and find a way to win.</p>
+  <dl class="byline"><dt>Author</dt><dd>Ric Porteous</dd><dt>Published</dt><dd>November 2026</dd><dt>Code</dt><dd><a href="https://github.com/AFLgains/AIFL">github.com/AFLgains/AIFL</a></dd></dl>
+  <section class="tldr">
+    <h2>TL;DR</h2>
+    <p>Imagine you were an opposition analyst for a football team.</p>
+    <p>A good opposition analyst watches film of the opposition, works out how a team plays, finds what it does badly, and tells their own side what to change in order to increase the chance of winning the next game. They never see the other team's notes / playbook or anything else. They infer it from the limited resources they have.</p>
+    <p>The central question of this research was: could Claude Code be a good opposition analyst?</p>
+    <p>To test it I used my favourite sport to watch: <a href="https://en.wikipedia.org/wiki/Australian_rules_football">Australian Rules Football</a>. But real football data is a poor place to test this. The only way to check a game plan is to run counterfactuals: play the game repeatedly and check if the winning probability improved (impossible in real life). So I needed a simulation of the sport that could replay any fixture thousands of times.</p>
+    <p>So, I made an 8-a-side approximation of Australian football: a game engine with real physics. I then created a harness around this engine where any "rule-bot" (a set of Python functions) or LLM (with sufficient instructions) can play. Over 60 teams were created. The creation process was a mixture of experimenting with different rules and instructions.</p>
+    <p>Teams were ranked using an Elo score. To get extremely powerful teams (high Elo score), agent-driven hill climbing was used to evolve teams. Coding agents wrote changed copies of the best team, and a copy was kept only if it got a higher Elo.</p>
+    <p>From these games, 1,620,741 positions were gathered and a neural network was developed that rates any position on the ground.</p>
+    <p>Claude was then given a task: Given only historical play data on the team we're trying to beat and the aforementioned neural network as a scenario tool, infer the opposition's predominant play style and formulate a strategy to beat them.</p>
+    <p>The answer was yes. In every test, Claude's plan increased our team's win rate against the opponent that it studied, with only three small changes to the team's code. With no limit on changes, Claude wrote a new team that beat the best bot available, the champion of the evolved teams, in 78% of games. It did this without ever seeing that bot's code or playing against it. Claude also showed some interesting behaviour: it rebuilt each opponent as a practice bot from the data alone, it predicted its own results before the real games, it changed its own advice when a test disagreed, and it found an error in our rules sheet.</p>
+  </section>
+</header>
+
+<main>
+<figure class="wide">
+  <div class="night" id="hero"></div>
+  <figcaption><b>Figure 1. A real game, and what the network thinks of it.</b> Every dot is a player in a simulated match between two evolved bots. The strip underneath is a neural network's running answer to one question: who scores the next goal? Blue is one team, orange is another, and each tick is a goal. Drag along the strip to move through the game.</figcaption>
+</figure>
+
+<div class="wide teaser">
+  <div class="tz"><span class="step">BUILD</span><span class="task">A football engine with kicks, marks, tackles and fatigue</span><span class="big">8 v 8</span><span class="note">on a 140 × 100 m oval</span></div>
+  <div class="tz"><span class="step">EVOLVE</span><span class="task">Bots compete and improve over 38 rounds</span><span class="big">+452</span><span class="note">Elo over the best hand-written club</span></div>
+  <div class="tz"><span class="step">PREDICT</span><span class="task">A network learns who scores next from any position</span><span class="big">3.2M</span><span class="note">labelled rows, from 1,620,741 positions</span></div>
+  <div class="tz"><span class="step">ANALYSE</span><span class="task">Claude studies the games and writes a scouting report</span><span class="big">3</span><span class="note">reports, one for each opponent, from game data only</span></div>
+  <div class="tz"><span class="step">TEST</span><span class="task">Claude changes its own team and plays the real opponent</span><span class="big">3% → 78%</span><span class="note">win rate against the champion, which Claude never played</span></div>
+</div>
+
+<p>So in summary, the five components of this project were:</p>
+<ul>
+  <li>Building a football engine</li>
+  <li>Creating powerful teams</li>
+  <li>Creating an analysis tool that could rate the quality of a position</li>
+  <li>Using Claude as an analyst to study an opposition</li>
+  <li>Seeing if Claude's predictions help</li>
+</ul>
+
+<h2 class="sec" id="build">Game mechanics</h2>
+<p>The game engine is a simplified form of Australian football: eight players a side, two midfielders, three defenders and three forwards, playing four-minute matches on an oval. Goals are worth six and behinds one. The engine handles the whole contest: running and energy, kicks with real flight and error, marks and spoils, ground balls, tackles, holding the ball, and set plays with a man on the mark.</p>
+<p>I wanted it close enough to the real sport that football ideas transfer, without being so detailed that nothing can be learned from it. A kick travels at about 22 metres a second, so there's a real decision about whether a lead will still be open when the ball arrives. Sprinting empties a player in seconds. Bounce the ball every 15 metres or give it up. Small rules like these are what make tactics matter.</p>
+<p>Pressure is incorporated. Every opponent near the ball carrier adds to a pressure score, and that score makes kicks, handballs, marks and gathers worse. It falls away quickly with distance, so a defender who gets three metres closer can change the whole contest.</p>
+
+<figure>
+  <div class="night">
+    <p class="fig-t">Move the defenders</p>
+    <p class="fig-s" style="color:var(--night-ink-2)">Each opponent adds exp(−(distance / 5 m)²). The total is capped at 2.</p>
+    <canvas id="pressure" class="drag" aria-label="Three draggable opponents around a ball carrier, with the pressure field shaded"></canvas>
+    <div id="pressure-read" style="margin-top:10px"></div>
+    <div style="height:6px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:6px"><div id="pressure-bar" style="height:6px;background:#f0733f;border-radius:3px;width:0"></div></div>
+  </div>
+  <figcaption><b>Figure 2. Pressure, using the engine's formula.</b> Drag the orange players. One player at 3 m does more than two at 8 m.</figcaption>
+</figure>
+
+<p>Almost nothing in the engine is certain. Every contest is stochastic, weighted by the players' skills and the pressure on them. This matters because it simulates how the same position can be played out many times and end differently, just like real sport. This is also why a game plan has to be judged over hundreds of games, not one.</p>
+<ul>
+  <li><b>Kicking.</b> A kick lands near where it was aimed, but not on it. The error is about 5 degrees either way, and it grows with pressure and running speed and shrinks with the kicker's accuracy. In simulated matches, a 15 to 25 m kick lands a median of about 5 m from its target, and a 35 to 45 m kick about 8 m. One kick in ten misses by 12 to 16 m. Handballs are much tighter, with a median miss under a metre.</li>
+  <li><b>Goal kicking.</b> A shot from straight in front is built to go through 84% of the time from 20 m, 68% from 30 m, 55% from 40 m and 46% from 50 m. In the games I measured, 58% of scoring shots were goals. Set shots kicked a goal 54% of the time, and shots in general play 47%.</li>
+  <li><b>Marking.</b> A player with no one near them marks about 95% of the time. With an opponent a metre away, that falls to about 60%. In simulated matches, a long kick to a player on their own was marked 77% of the time. When both teams contested it, only 24% were marked: 64% were spoiled and the rest spilled.</li>
+  <li><b>Tackling.</b> The closer and more skilled the tackler, the sooner a tackle lands. There were about seven tackles a game, and nearly all of them knocked the ball loose. Fewer than 2% were paid as holding the ball, because the bots rarely hold it for more than a second.</li>
+  <li><b>Bouncing.</b> About 30% of bounces were fumbled, but the bots seldom run far with the ball, so there were only 57 bounces across all the games.</li>
+</ul>
+
+<h2 class="sec" id="harness">The harness</h2>
+<p>A team is anything that can read the state of the game and return orders. The way this works is that about once a second (and again after a kick, a possession or a stoppage), the engine stops and asks both teams what they want. Each player then gets an order from the harness: for example, run here, kick there, contest the mark, spoil, tackle that player. Physics runs on between decisions, and orders stand until they're changed.</p>
+<p>There are two types of teams: a Python bot (a "rule-bot") that encodes its instructions in code and a large language model that can output its decisions for a given input (state). For LLMs, both traditional text-in-text-out LLMs AND decision-based LLMs (e.g., JEV) were experimented with.</p>
+
+<figure id="loop-fig" class="wide">
+  <div class="card">
+    <div class="ctl"><div id="loop-kind"></div></div>
+    <div class="loop">
+      <div class="lp"><h4>State in</h4><pre id="loop-state"></pre></div>
+      <div class="ar"><span>→</span></div>
+      <div class="lp"><h4>The coach</h4><pre id="loop-bot"></pre></div>
+      <div class="ar"><span>→</span></div>
+      <div class="lp"><h4>Orders out</h4><pre id="loop-orders"></pre></div>
+    </div>
+  </div>
+  <figcaption><b>Figure 3. The decision loop.</b> The state and orders are cycling through the real decisions from the game in Figure 1.</figcaption>
+</figure>
+
+<h2 class="sec" id="evolve">Evolve a team worth analysing</h2>
+<p>At first, Python teams were hand-written from scratch using common sense.</p>
+<p>But in order to run the experiment, we needed a team worth studying. A hand-written club has obvious habits, so I needed something stronger, and stranger, than I could write myself.</p>
+<p>To do this, I used agent-driven hill climbing to evolve new clubs. In each round, coding agents wrote changed copies of the current best bot. Each copy played the strongest bots on the ladder. A copy became the new champion only if it got a higher Elo. The process had these steps:</p>
+<ol>
+  <li>In rounds 1 to 7, two coding agents (red and blue) each wrote one bot in each round.</li>
+  <li>All bots played against each other, and each bot got an Elo rating. Five hand-written bots stayed in the pool as fixed reference points.</li>
+  <li>From round 8, each round started from the bot with the highest Elo (the champion).</li>
+  <li>Each round made one to three new bots (candidates). Each candidate was the champion with one or more changes. For example, candidate <span class="mono">round_08a</span> lets a set-play taker hold the ball for 4 s, not 3 s.</li>
+  <li>Each candidate played the 10 highest-rated bots. If a candidate got a higher Elo than the champion, it became the new champion.</li>
+  <li>Some changes were first tested alone. The changes with a positive result were then put together in one bot.</li>
+</ol>
+<p>The process ran for 38 rounds. After round 36, the ladder had 9,448 games. The best bot, <span class="mono">round_36a</span>, had an Elo of 2,036. The best hand-written bot had an Elo of 1,584, an increase of 452 points. With this difference, the expected win rate of <span class="mono">round_36a</span> against that bot was 93%.</p>
+
+<figure class="wide">
+  <div class="card">
+    <p class="fig-t">Elo by round</p>
+    <p class="fig-s">Each dot is one bot. The line is the best so far.</p>
+    <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--a)"></i>Climb bots</span><span><i style="background:var(--ink-3)"></i>Earlier red and blue teams</span></div>
+    <div id="climb"></div>
+  </div>
+  <figcaption><b>Figure 4. The climb.</b> All clubs fitted together from the archived 120-second ladder on the first engine version, with the five hand-written clubs averaging 1,500. The band leaves out the weakest of those, <span class="mono">zoo:keeper</span> at 1,316, and <span class="mono">round_29b</span>, which crashes on every decision, is off the chart. Hover over a dot for the bot.</figcaption>
+</figure>
+
+<p>The best team, <span class="mono">round_36a</span>, was then selected as one of the opponents in the analyst experiment. Its strategy is a long stack of ideas added and evolved progressively one at a time: who reaches the landing spot first, which kicks are worth taking, endgame shot selection when a behind would win the match. It's good in ways that are difficult to see from outside, which makes it the perfect candidate for study.</p>
+
+<h2 class="sec" id="predict">Teach a network to read the play</h2>
+<p>An analyst can do more than count events. An analyst can look at one frozen moment of a game and say if the position is good or bad. I wanted to give Claude a tool that does this. For this tool, I needed a neural network that answers one question for any position: <b>which team scores the next goal?</b></p>
+
+<h3>Labels: play each position forward</h3>
+<p>The network learns from labelled positions. A naive label would be to encode the team that scored the next goal in the real game. This label has a problem: it shows which team was stronger, not which position was better. A strong team in a bad position still gets a good label.</p>
+<p>So I used a different label. The method is similar to the method that chess engines use. The steps are:</p>
+<ol>
+  <li>Take a position from a real game.</li>
+  <li>Make a copy of the game at that moment.</li>
+  <li>Give control of <em>both</em> teams to the same strong bot, <span class="mono">round_29a</span>.</li>
+  <li>Play the copy until a team scores a goal (the "rollout").</li>
+  <li>Record which team scored.</li>
+</ol>
+<p>Both teams now use the same bot. Thus, the only difference between the teams is the position of the players and the ball.</p>
+
+<figure class="wide">
+  <div class="night">
+    <div class="ctl"><div id="futures-seg"></div></div>
+    <canvas id="futures" aria-label="Ball paths from repeated rollouts of one position, coloured by which team scored next"></canvas>
+    <div class="stat-row">
+      <div class="stat"><b id="fut-a">0</b><span>blue scored next</span></div>
+      <div class="stat"><b id="fut-b">0</b><span>orange scored next</span></div>
+      <div class="stat"><b id="fut-share">–</b><span>blue's share so far</span></div>
+      <div class="stat"><b id="fut-net">–</b><span>the network's rating</span></div>
+    </div>
+    <div style="display:flex;gap:2px;height:7px;margin-top:10px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div id="fut-bar-a" style="background:#4b97ef"></div><div style="flex:1"></div><div id="fut-bar-b" style="background:#f0733f"></div></div>
+  </div>
+  <figcaption><b>Figure 5. One position, 64 futures.</b> Real rollouts from three moments of the game in Figure 1. <span class="mono">round_29a</span> controls both teams. Each line is the path of the ball until the next goal. The training data has one rollout for each position, so the network must learn the probabilities from millions of single results. With 64 rollouts, each share has an error of about 6 points either way.</figcaption>
+</figure>
+
+<p>Each position gives two rows of data, one for each team. The ground is mirrored, so each team always attacks in the same direction. The inputs do not include the score or the clock. This is intentional: bots change their play when they are in front or behind, and the network must rate only the position.</p>
+<p>The network is a simple multilayer perceptron. It has 269 inputs, three hidden layers (512, 512 and 256 units) and one output. The inputs give the position and velocity of all 16 players and the ball, the pressure on each player, and the state of the ball.</p>
+
+<figure class="wide">
+  <div class="night" style="display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:center" id="net-grid">
+    <div id="net-replay"></div>
+    <div><canvas id="net" aria-label="The network's hidden units lighting up as the game plays"></canvas></div>
+  </div>
+  <figcaption><b>Figure 6. The network during a game.</b> The real activations of the network at each decision, from the same game, at match speed. The inputs on the left show which players have the largest effect on the rating. This effect is calculated from the gradient. It is a sensitivity, not an explanation: a bright player is a player that the rating is sensitive to at that moment.</figcaption>
+</figure>
+
+<h3>What the network learned</h3>
+<p>The inputs do not tell the network about the 50 m arc. They also do not tell it that the corridor is more dangerous than the wing. Figure 7 shows the training labels and the predictions of the network, side by side, by ball position.</p>
+
+<figure class="wide">
+  <div class="night">
+    <div class="ctl"><div id="map-seg"></div><span class="sp"></span><div class="ramp"><span>They score</span><span class="bar"></span><span>We score</span></div></div>
+    <div class="split">
+      <div><div class="lab">What actually happened in rollouts</div><canvas id="map-label" aria-label="Map of next-goal share from the labels"></canvas></div>
+      <div><div class="lab">What the network predicts</div><canvas id="map-net" aria-label="Map of next-goal share predicted by the network"></canvas></div>
+    </div>
+  </div>
+  <figcaption><b>Figure 7. The ground, as the network sees it.</b> Mean next-goal share by ball position, from 3,241,482 rows. The team always attacks to the right. Hover for the values. The two maps must agree (and they do). This shows that the network fits the data well.</figcaption>
+</figure>
+
+<h3>How good is the network?</h3>
+<p>I measured the network in two ways: on games that it did not see in training, and against the true value of single positions.</p>
+<p><b>Calibration.</b> I put the predictions on held-out games into bins. For each bin, I compared the mean prediction with the actual share of next goals. The points are on the diagonal (Figure 8, left), so the network is well calibrated. When the network gives a team 70%, that team scores next in approximately 70% of those positions.</p>
+<p><b>Accuracy.</b> On held-out games, the network predicts the team that scores next correctly in 69% of positions. This number can seem low. But goals have a large random component (see Game mechanics), and many positions are close to 50:50. No predictor can be correct in all positions. To find the maximum possible accuracy, I measured the true value of a set of positions:</p>
+<ol>
+  <li>Take 250 positions at random from held-out games.</li>
+  <li>For each position, make a copy of the game and play it to the next goal. <span class="mono">round_29a</span> controls both teams, as in the training labels.</li>
+  <li>Do step 2 100 times for each position. Do not count rollouts that end with no goal.</li>
+  <li>The true value of the position is the share of the rollouts in which each team scored.</li>
+</ol>
+<p>A perfect predictor knows this true value, and it always picks the team with the higher value. On these 250 positions, a perfect predictor is correct in approximately 72% of positions. The network is correct in 70%. The gap is small because many positions are close: in 28% of the positions, the true value is between 40% and 60%.</p>
+<p><b>Log loss.</b> Accuracy only shows if the predicted team was correct. Log loss also measures the quality of the probability. A lower value is better. On the same 250 positions:</p>
+<div class="tbl-wrap" style="margin-block:0 16px"><table>
+  <thead><tr><th>Predictor</th><th>Log loss</th></tr></thead>
+  <tbody>
+    <tr><td>Coin toss (always 50%)</td><td class="n">0.693</td></tr>
+    <tr><td>The network</td><td class="n">0.578</td></tr>
+    <tr><td>Perfect predictor (the floor)</td><td class="n">0.558</td></tr>
+  </tbody>
+</table></div>
+<p>The floor is the lowest log loss that is possible. The result of each rollout is random, so a predictor that knows the true value still has some loss. For one position with true value p, this loss is the binary entropy, −(p ln p + (1 − p) ln(1 − p)). The floor is the mean of this value over the 250 positions. The value of p comes from a finite number of rollouts, so this mean is slightly too low. The calculation adds a correction of 1 / 2n for each position, where n is its number of rollouts that ended in a goal (92 on average).</p>
+<p>From a coin toss to the floor, the possible improvement is 0.135. The network gets 0.115 of this, which is 85%. On all held-out games, the log loss of the network is 0.579.</p>
+<p><b>Single positions.</b> Figure 8 (right) compares the network with the true value of 500 positions. These are the 250 random positions, plus 250 positions chosen to cover the full range of predictions. The mean error is 8 points, and the correlation is 0.92. Some of this error comes from random variation in the 100 rollouts.</p>
+
+<figure class="wide">
+  <div class="card">
+    <div class="split" style="gap:20px">
+      <div><p class="fig-t">Held-out games</p><p class="fig-s">Predicted share against actual share</p><div id="cal-a"></div></div>
+      <div><p class="fig-t">Against 100 rollouts</p><p class="fig-s">500 sampled positions. Each position was played 100 times.</p><div id="cal-b"></div></div>
+    </div>
+    <div class="stat-row" id="cal-stats" style="margin-top:16px"></div>
+  </div>
+  <figcaption><b>Figure 8. How accurate is the rating?</b> Left: predictions on held-out games, in bins, against the actual share of next goals. Right: the network against the true value of 500 positions. Each position was played 100 times.</figcaption>
+</figure>
+
+<h2 class="sec" id="analyst">The test: Claude as a football analyst</h2>
+<p>With the simulation engine, the strong bot, and the neural network to rate positions ready, I had enough to see if Claude could be an opposition analyst. In this experiment, Claude was told that it was working for a fictional team, the "Power", which was preparing for an upcoming match. Three opposition teams were tested: the Giants, the Eagles and the Sharks.</p>
+<p>For each opposition team, Claude got two pieces of information to help it prepare:</p>
+<ol>
+  <li>Data on the opposition, and the rules of the game</li>
+  <li>A position rating tool</li>
+</ol>
+<p>Its goal was to analyse the opposition, write a scouting report, and then propose a small, limited change to the Power's strategy to improve the Power's performance against that opposition. The change was made to the code that defines the Power's strategy: at most 3 separate changes and 30 changed lines. In practice, each plan changed only 3 to 7 lines. This limit simulates a coach who has only one week to prepare for the next match: there is time for a few targeted changes, not for a new game plan. Claude got the Power's code only after it had finished the scouting report.</p>
+
+<h3>1. The data that Claude gets</h3>
+<p>A real analyst works from video. Video shows where each player goes, but it does not show the orders from the coach. Claude gets the same type of data. The engine records each order to each player, but Claude does not get the orders. Use the toggle in Figure 9 to see how much the orders show.</p>
+
+<figure class="wide">
+  <div class="night">
+    <div class="ctl"><div id="orders-seg"></div></div>
+    <div id="orders"></div>
+  </div>
+  <figcaption><b>Figure 9. Movement and orders.</b> With orders on, each line shows where a player was told to go. A dashed line is a jog. These lines are equivalent to the playbook of the other team. Claude does not get the orders of any team, including its own team.</figcaption>
+</figure>
+
+<p>All data goes through a whitelist. Claude gets a data field only if the field is on the list. A test fails if any other field gets through.</p>
+
+<figure>
+  <div class="card">
+    <div class="wall">
+      <div><h4>Claude gets</h4><ul>
+        <li><div><b>All games of the opponent</b><span>Player and ball positions, and public match events</span></div></li>
+        <li><div><b>All games of its own club</b><span>Including 20 games against the opponent</span></div></li>
+        <li><div><b>The rules</b><span>The laws of the game, with no team tactics</span></div></li>
+        <li><div><b>The position rating</b><span>The network, as a tool for experiments</span></div></li>
+        <li><div><b>After its report:</b> the code of its own club<span>And a blank template, a very short example and a practice engine</span></div></li>
+      </ul></div>
+      <div class="mid" aria-hidden="true"></div>
+      <div><h4>Claude does not get</h4><ul>
+        <li><div><b>The source code of any opponent</b><span>Or the shared code that many bots use</span></div></li>
+        <li><div><b>The orders of any team</b><span>Including its own club</span></div></li>
+        <li><div><b>Player energy</b><span>A camera cannot record fitness</span></div></li>
+        <li><div><b>Kick targets and power</b><span>Only where the ball landed, not where the kicker aimed</span></div></li>
+        <li><div><b>The identity of each club</b><span>No list connects a club name to its bot</span></div></li>
+      </ul></div>
+    </div>
+  </div>
+  <figcaption><b>Figure 10. What Claude gets.</b> All clubs have anonymous names. Each session works in a sandbox, with no access to this repository.</figcaption>
+</figure>
+
+<p>Claude's team is the Power. The Power is a simple club of medium strength. It was written from scratch, and it shares as little code as possible with the bots that it plays. Thus, a better result is more likely to come from a weakness of the opponent, not from shared code.</p>
+
+<figure>
+  <div class="card">
+    <div class="phases">
+      <div class="ph"><b>Scout</b>Claude studies the season. It writes a report on how the opponent plays and where it is weak.</div>
+      <div class="ph"><b>Plan</b>A new session gets the report, the code of the Power and a practice engine. It can make a maximum of 3 changes and 30 changed lines. For the Sharks, one more session has no limit.</div>
+      <div class="ph"><b>Test</b>Claude cannot play the real opponent. It writes its own model of the opponent from its report, and tests each change against that model over many games.</div>
+      <div class="ph"><b>Grade</b>I play the plan against the real opponent on 200 new seeds, from both ends (400 games). I play the original Power on the same seeds, and compare the two.</div>
+    </div>
+  </div>
+  <figcaption><b>Figure 11. One run.</b> The 3-change limit is like a coach with one week to prepare. The session with no limit is like a coach with a full off-season. Each brief has the same goal: beat this one opponent. Each session ran in its own sandbox, with no internet and no access to this repository.</figcaption>
+</figure>
+
+<h3>2. The position rating network as a tool for the analyst</h3>
+<p>The position rating network lets Claude do experiments on positions. Claude can take a moment from a game, move a player and get the change in the rating. Figure 12 shows this. The map shows the rating with the ball carrier at each point on the ground. All other players stay in the same positions.</p>
+
+<figure class="wide">
+  <div class="night">
+    <div class="ctl"><div id="whatif-seg"></div><span class="sp"></span><div class="ramp"><span>They score</span><span class="bar"></span><span>We score</span></div></div>
+    <canvas id="whatif" class="drag" aria-label="Map of the network's rating for every position of the ball carrier. Move the pointer to try a spot"></canvas>
+    <div class="stat-row">
+      <div class="stat"><b id="wi-base">–</b><span>where the carrier really was</span></div>
+      <div class="stat"><b id="wi-here">–</b><span>the spot you've chosen</span></div>
+      <div class="stat"><b id="wi-d">–</b><span>change</span></div>
+    </div>
+  </div>
+  <figcaption><b>Figure 12. What if the ball were here?</b> Drag the ball. Each cell of the map is one call to the network. In each call, the carrier moves to that cell and all other players stay where they are. Blue players are on the carrier's team. The holes in the map come from the positions of nearby players. A coach can see this, but a box score does not show it.</figcaption>
+</figure>
+
+<p>This tool turned out to be one of the key unlocks for Claude. Here are some interesting examples of how Claude used the tool during its analysis:</p>
+<p><b>1. Claude checked the tool before it used it.</b> The Giants analyst made 300 real positions again from the game data. It rated each position with the tool and compared the rating with the rating stored in the data. The correlation was 0.96 when a player held the ball, 0.89 for a loose ball and 0.78 for a ball in flight. The Sharks analyst did the same check. For a ball in flight, its correlation was only 0.40 to 0.48, because it could not make the flight of the ball again from the data. So it used the tool only on positions where a player holds the ball.</p>
+<p><b>2. A test with the tool became part of a plan.</b> The Giants carry the ball with little pressure. Claude found 268 frames from the head-to-head games where a Giant held the ball and no Power player was within 4 m. In each frame it moved the nearest Power player to 2.5 m in front of the carrier, and rated the position again. The rating moved 1.4 points towards the Power (standard error 0.1). It moved towards the Power in 90% of the frames, even after allowing for the opponent that the player left unmarked. This test actually became one of the strategies for play against the Giants: the nearest Power player closes down a Giants carrier within 12 m.</p>
+<p><b>3. The tool stopped an idea.</b> The intercept data suggested that the Power should kick wide against the Giants: 15–17% of kicks through the centre were intercepted, and 0–4% of wide kicks. But only 65 kicks were wide, and the tool preferred central landing spots. Claude did not recommend the idea.</p>
+<p><b>4. The tool gave the Sharks analyst a rule for each kick.</b> Claude wrote the value of a kick as: P(kept) × the rating if the Power holds the ball at the landing spot, plus (1 − P(kept)) × the rating if the nearest Shark holds it there. It fitted P(kept) on 16,000 kicks from the league. The result: better choices of target alone were worth only about 1 point, because the Power's forwards were always covered. The forwards needed more space first. The same rule is the centre of the plan with no limit (see Results).</p>
+
+<h3>The three opponents</h3>
+<p>Separate Claude analysts were asked to study three teams: the Giants, the Eagles and the Sharks.</p>
+
+<div class="exp-head"><span class="exp-num">Experiment 1</span><h3>The Giants: an ordinary team</h3></div>
+<p>The Giants were a mid-range, hand-written team. Before any change, the Power won 53.6% of its games against the Giants.</p>
+<div class="exp-head"><span class="exp-num">Experiment 2</span><h3>The Eagles: a clever team</h3></div>
+<p>Like the Giants, the Eagles were a hand-written team, but slightly stronger. Before any change, the Power won 53.0% of its games against the Eagles.</p>
+<div class="exp-head"><span class="exp-num">Experiment 3</span><h3>The Sharks: the champion</h3></div>
+<p>The Sharks were the champion of the evolved teams. Before any change, the Power won only 13 of 400 games against them (3.4%).</p>
+<div class="exp-head"><span class="exp-num">Experiment 4</span><h3>Bonus: Unlimited change to the Power</h3></div>
+<p>The last experiment removed the limit. A new session got the same Sharks scouting report, the code of the Power and the practice engine. This time Claude could change the Power as much as it wanted, or write a new program. The goal was the same: beat the Sharks. The other rules were also the same: Claude never saw the Sharks' code, and it could practise only against its own model of the Sharks. This is like a coach with a full off-season, not one week.</p>
+<h2 class="sec" id="results">Results</h2>
+<h3>The scouting reports</h3>
+<p>These are Claude's scouting reports, unchanged.</p>
+<ul>
+  <li><a href="assets/reports/giants_report.html">The Giants</a>: a kick-first team that sits off the carrier and intercepts.</li>
+  <li><a href="assets/reports/eagles_report.html">The Eagles</a>: a fixed 3-2-3 shape, a target forward who never moves, and man-marking.</li>
+  <li><a href="assets/reports/sharks_report.html">The Sharks</a>: why the Power loses at its defensive-50 exits, and how the strong clubs beat the Sharks.</li>
+</ul>
+<p>These reports were then the basis for how the Power's code was updated to beat its respective opposition. For each opposition, the updated rule set is called the "plan".</p>
+<h3>Overall results</h3>
+<p>Each plan played 400 games against the real opponent: 200 new seeds, each from both ends. The original Power played the same 400 seeds. Figure 13 and Table 1 give the results. The win rate counts a draw as half a win, and each ± is two standard errors.</p>
+<figure class="wide">
+  <div class="card">
+    <div class="ctl"><div id="wf-seg"></div></div>
+    <div class="split" style="gap:22px">
+      <div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="fig-t">Before</span><span class="mono" id="wf-before-n"></span></div><div class="stat" style="margin:2px 0 8px"><b id="wf-before-p"></b><span>score against the opponent</span></div><div id="wf-before"></div></div>
+      <div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="fig-t">After Claude's plan</span><span class="mono" id="wf-after-n"></span></div><div class="stat" style="margin:2px 0 8px"><b id="wf-after-p"></b><span>score against the opponent</span></div><div id="wf-after"></div></div>
+    </div>
+    <div class="legend" style="margin-top:12px"><span><i style="background:var(--a)"></i>Win</span><span><i style="background:var(--axis)"></i>Draw</span><span><i style="background:var(--b)"></i>Loss</span><span id="wf-note" style="flex-basis:100%;color:var(--ink);font-size:15.5px"></span></div>
+  </div>
+  <figcaption><b>Figure 13. 400 games, before and after.</b> Each dot is one game against the real opponent. In the score, a draw counts as half a win.</figcaption>
+</figure>
+<figure>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Opponent</th><th>Limit</th><th>Size of the change</th><th>Win rate before</th><th>After</th><th>Gain</th></tr></thead>
+    <tbody>
+      <tr><td>Giants</td><td>3 changes</td><td>7 lines</td><td class="n">53.6%</td><td class="n">69.9%</td><td class="n">+16.2 ± 6.4</td></tr>
+      <tr><td>Eagles</td><td>3 changes</td><td>3 lines</td><td class="n">53.0%</td><td class="n">81.0%</td><td class="n">+28.0 ± 6.1</td></tr>
+      <tr><td>Sharks</td><td>3 changes</td><td>6 lines</td><td class="n">3.4%</td><td class="n">28.6%</td><td class="n">+25.2 ± 4.7</td></tr>
+      <tr><td>Sharks</td><td>None</td><td>545-line program</td><td class="n">3.4%</td><td class="n">77.9%</td><td class="n">+74.5 ± 4.5</td></tr>
+    </tbody>
+  </table></div>
+  <figcaption><b>Table 1. The result.</b> Four graded plans from seven Claude sessions: one report for each opponent, one plan for each opponent, and a second plan for the Sharks with no limit.</figcaption>
+</figure>
+<p>All four plans gave a reliable gain against their opponent. With three small changes, the Power went from about even to clear favourite against the Giants and the Eagles. Against the Sharks, the same type of plan increased the win rate from 3% to 29%. This is a large gain, but the Power still lost most games. When the limit was removed, Claude devised a plan from scratch that beat the Sharks 78% of the time, up from only 3%.</p>
+<p>Figure 14 shows the code changes themselves. Each plan is a small edit to the Power's program, and the comments in the code are Claude's own.</p>
+<figure class="wide">
+  <div class="card">
+    <div class="ctl"><div id="diff-seg"></div></div>
+    <div id="diff"></div>
+  </div>
+  <figcaption><b>Figure 14. The plan diff.</b> The real changes from each plan with the 3-change limit, against the original Power. Red lines were removed and green lines were added. The note above each change gives Claude's reason for it, from its plan.</figcaption>
+</figure>
+<p><b>Are the plans specific to the opponent?</b> A plan for one opponent can also make the Power better against every club. To check this, each plan also played 8 other hand-written clubs (not the Giants or the Eagles), 40 games against each, on the same seeds as the original Power. The original Power wins 71% of its games against them.</p>
+<figure>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Plan</th><th>Gain against its opponent</th><th>Gain against 8 other hand-written clubs</th></tr></thead>
+    <tbody>
+      <tr><td>Giants</td><td class="n">+16.2</td><td class="n">+13.6</td></tr>
+      <tr><td>Eagles</td><td class="n">+28.0</td><td class="n">+7.3</td></tr>
+      <tr><td>Sharks, limit</td><td class="n">+25.2</td><td class="n">+20.3</td></tr>
+      <tr><td>Sharks, no limit</td><td class="n">+74.5</td><td class="n">+28.7 (wins every game)</td></tr>
+    </tbody>
+  </table></div>
+  <figcaption><b>Table 2. Gain against the opponent and against other clubs.</b> Points of win rate. Each gain against the hand-written clubs is an average over 320 games, with an error of approximately ±3–4 points.</figcaption>
+</figure>
+<p>Each plan gained more against its own opponent than against the other hand-written clubs. The Eagles plan is the clearest case: +28 points against the Eagles, and +7 against the other clubs. The plans for the Giants and the Eagles also used different changes, and each change came from the scouting report:</p>
+<ul>
+  <li><b>Giants:</b> kick to the receiver, not 3 m in front of him, because the Giants' defenders stand on the goal side. Shoot from up to 45 m, not 38 m, because the Giants let long shots through. The nearest player closes down a Giants carrier within 12 m.</li>
+  <li><b>Eagles:</b> a teammate is "free" only with no opponent within 5 m, not 3 m, because the Eagles' defenders stand 3.3 m from their forward. The forwards stand 35 m ahead of the ball, not 25 m, to pull the Eagles' man-markers deep. The covering midfielder stands 20 m behind the ball, not 10 m, where the Eagles' long kicks land.</li>
+</ul>
+<h3>How Claude beat the Sharks</h3>
+<p><b>The problem.</b> The Sharks analyst found why the Power loses, from the data alone. The Power loses the ball when it kicks out of its defensive 50. Across the league, a kick is kept more often when there is more space at the landing spot (Figure 15). Against the Sharks, 44% of the Power's kicks went to a spot where a Shark was nearer than any Power player. Only 8% had more than 6 m of space. The eight clubs that took most of the Sharks' losses and draws kicked to space: 32% of their kicks had more than 6 m.</p>
+<figure class="wide">
+  <div class="card">
+    <div class="split" style="gap:20px">
+      <div><p class="fig-t">Kicks to space are kept</p><p class="fig-s">Share of kicks kept, by space advantage at the kick</p><div id="space-a"></div></div>
+      <div><p class="fig-t">Who kicks to space</p><p class="fig-s">Kicks against the Sharks, by space advantage</p><div id="space-b"></div></div>
+    </div>
+    <div class="legend" style="margin-top:10px"><span><i style="background:var(--a)"></i>Power v Sharks</span><span><i style="background:var(--c)"></i>Eight strongest clubs v Sharks</span><span><i style="background:var(--b)"></i>Sharks v Power</span></div>
+  </div>
+  <figcaption><b>Figure 15. Kicks to space are kept.</b> Space advantage is the distance from the landing spot to the nearest opponent, minus the distance to the nearest teammate, at the moment of the kick. Left: all 10,368 kicks of 15 m or more in the season, without shots. Right: the Power against the Sharks, the eight strongest clubs against the Sharks, and the Sharks against the Power. The numbers come from the Sharks analyst's own data files. I ran its figure code again to draw this figure.</figcaption>
+</figure>
+<p>The report also found the cause. Each Sharks defender stays 3–4 m from a Power forward. Against other clubs, they stay 5–7 m away. And the Power's forwards stand still: when the Power has the ball in its defensive 50, they move faster than 5 m/s only 4–5% of the time. The strong clubs' forwards do it 23–28% of the time. So the Power kicks to covered players. About half of the Power's chains that start in its defensive 50 lose the ball again inside the same 50. For the strong clubs it is 15–16%.</p>
+<p><b>With 3 changes (28.6%).</b> The plan made the Power kick only to players in space:</p>
+<ol>
+  <li>A teammate is "free" only with no opponent within 7 m (it was 3 m).</li>
+  <li>Kick to where the receiver will be, not to where he stands.</li>
+  <li>With no kick on and no opponent near, run on for up to 0.8 s before a short handball.</li>
+</ol>
+<p><b>With no limit (77.9%).</b> Claude wrote an entirely new program of 545 lines. These are its main ideas, each with the evidence that Claude gave for it:</p>
+<ul>
+  <li><b>Race to the ball.</b> At each decision, the carrier compares kicks to points around each teammate, handballs, short runs and a shot. For each kick, it calculates who gets to the landing spot first: its own receiver, allowing for speed and acceleration, or the fastest Shark. It then scores each option by P(kept) × the value of the ball at that spot (the rule from the fourth tool example above). In practice games against its model, the plan kept 88% of its kicks. In the real games, the Power kept 62% against the Sharks.</li>
+  <li><b>Take the set shot.</b> The Power never took a set shot against the Sharks: 0 of its 71 shots. From 35–45 m, a set shot from a mark was worth 2.93 points, and playing on was worth 1.73.</li>
+  <li><b>Wait at kick-ins.</b> The Power kicked in after 0.4 s and kept the ball 58% of the time. The strong clubs and the Sharks wait about 2 s, and keep it 73–92% of the time.</li>
+  <li><b>Keep the defenders on the goal side.</b> The Sharks' forwards never come back: they stay 23–26 m ahead of the ball. So the Power's defenders always stay between them and the goal, and one player sweeps behind.</li>
+  <li><b>Save energy.</b> Players jog to their positions, and sprint only when it matters. In practice games, this was the largest single gain (see below).</li>
+</ul>
+<h3>Other things Claude did</h3>
+<p><b>It rebuilt each opponent as a practice opponent.</b> Claude could not play the real opponent. So in each plan session it wrote its own copy of the opponent as a bot, from its scouting report only, and tested its changes against that copy. It then checked each copy against the 20 real games between the Power and that opponent. The copies matched many details of the real play:</p>
+<ul>
+  <li><b>Giants:</b> intercept marks 2.7 a game (real games 3.15), spoils 2.0 (real 2.65), and shots from 34–35 m on average (real 34.4 m).</li>
+  <li><b>Eagles:</b> Claude fitted its copy to 12 statistics from the real games, with a random search over 70 versions of the copy.</li>
+  <li><b>Sharks:</b> the Sharks won the ball in the Power's defensive 50 4.3 times a game (real 4.8). The nearest Shark stood 2.7 m from a Power forward (real 3.0 m). Tackles, spoils and marks were 5.4, 7.7 and 6.7 a game (real 5.0, 7.4 and 7.1).</li>
+</ul>
+<figure>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Opponent</th><th>Original Power against the copy</th><th>Original Power against the real club</th><th>Plan against the copy</th><th>Plan against the real club</th></tr></thead>
+    <tbody>
+      <tr><td>Giants</td><td>64–72%</td><td class="n">53.6%</td><td>83–90%</td><td class="n">69.9%</td></tr>
+      <tr><td>Eagles</td><td>40–69%</td><td class="n">53.0%</td><td>88–96%</td><td class="n">81.0%</td></tr>
+      <tr><td>Sharks, limit</td><td class="n">11%</td><td class="n">3.4%</td><td>43–73%</td><td class="n">28.6%</td></tr>
+      <tr><td>Sharks, no limit</td><td class="n">13%</td><td class="n">3.4%</td><td class="n">93%</td><td class="n">77.9%</td></tr>
+    </tbody>
+  </table></div>
+  <figcaption><b>Table 3. Claude's copy and the real opponent.</b> Win rate of the Power. The "copy" columns are Claude's own results from its practice games, against its main copy and the variants it made of it (a range where the copies gave different results). The "real club" columns are the official grades.</figcaption>
+</figure>
+<p>The copies were close, but not exact. The copies of the Giants and the Sharks were weaker than the real clubs, and Claude's best-fit copy of the Eagles was a little stronger. In all four cases, the plan did better against the copy than against the real club. Claude expected this. Each plan said that the copy was easier than the real club in some way, and that the real gain would be smaller than the gain in practice.</p>
+<p><b>It predicted its own results.</b> Each plan ends with a forecast, written before the grade:</p>
+<div class="tbl-wrap"><table>
+    <thead><tr><th>Plan</th><th>Claude's forecast</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Giants</td><td>the win rate goes up "by something like 10–20 points"</td><td class="n">+16.2 points</td></tr>
+      <tr><td>Eagles</td><td>"a 70–80% chance of winning"</td><td class="n">81.0%</td></tr>
+      <tr><td>Sharks, limit</td><td>that the plan makes the Power favourites: "low"</td><td class="n">28.6%</td></tr>
+      <tr><td>Sharks, no limit</td><td>"a win rate somewhere around 70–90%"</td><td class="n">77.9%</td></tr>
+    </tbody>
+  </table></div>
+<p><b>It changed its own advice when a test disagreed.</b> The Sharks report recommended that the Power's forwards lead for the ball. In the practice games of the plan with no limit, leads made the plan worse: 91% wins with leads, 98% without. Claude found the cause: the Sharks' defenders are faster than the Power's forwards (speed rating 0.66 against 0.58). So a lead does not get the forward free; it only makes him tired. Claude wrote: "Space comes from where the ball is kicked, not from forwards running."</p>
+<p><b>It found an error in our rules sheet.</b> The rules sheet said that a steady run holds a player's energy. In its practice games, Claude saw that a run drains energy at about half the rate of a sprint, so a player who runs all the time is empty in about 14 s. It changed the plan so that players jog when they can. This was the largest single gain in its tests: more jogging raised the win rate against its model from 73% to 95%.</p>
+<h2 class="sec" id="conclusion">Conclusion</h2>
+<p>Claude read one season of game data, described how each opponent plays, and found where the Power lost. Each report led to a plan. With three small changes, each plan increased the win rate against its opponent: by 16 and 28 points against the two mid-range clubs, and by 25 points against the champion. Each plan gained more against its own opponent than against other clubs, most clearly against the Eagles. With no limit, Claude wrote a program that beats the champion in 78% of games. It never saw the champion's code and never played it. Claude also predicted each result well, and it said each time that the real opponent would be harder than its practice model.</p>
+<figure class="wide">
+  <div class="night">
+    <div class="ctl"><div id="sharks-seg"></div></div>
+    <div id="sharks-rp"></div>
+  </div>
+  <figcaption><b>Figure 16. The Power against the Sharks, before and after.</b> Two real games against the Sharks on the same seed. Before: the original Power loses 2 to 30. After: the Power with Claude's plan wins 14 to 0. Blue is the Power and orange is the Sharks. The strip underneath is the network's rating: who scores the next goal. Both games are typical of their grades: the original Power lost by 25 points a game on average, and the plan won by 8.</figcaption>
+</figure>
+
+<section class="foot">
+  <h2>Citation</h2>
+  <pre class="cite">@misc{porteous2026analyst,
+  title  = {Claude Code can be a football analyst},
+  author = {Porteous, Ric},
+  year   = {2026},
+  url    = {https://aflgains.github.io/AIFL/}
+}</pre>
+</section>
+<div style="height:60px"></div>
+</main>
+<div id="tip" role="status"></div>
+<script src="js/core.js"></script>
+<script src="js/replay.js"></script>
+<script src="js/figures.js"></script>
+</body>
+</html>
