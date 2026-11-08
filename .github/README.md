@@ -1,5 +1,7 @@
 # afl_sim — an Australian Rules football simulator for bots (and you)
 
+> **Read the research blog: [Claude Code can be a football analyst](https://aflgains.github.io/AIFL/).** Claude studies game data with a position-rating network, scouts three teams, and changes a team to beat them, including a team that beats the best evolved bot 78% of the time.
+
 A physics engine for Australian Rules football, built for **writing bots that play it**. Two games:
 
 | Game | Players | Ground | Notes |

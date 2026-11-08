@@ -16,7 +16,9 @@ The scripts in `scripts/` regenerate `assets/` from a private checkout that hold
 | `gen_ladder.py` | `ladder.json` | 4 |
 | `gen_results.py` | `results.json`, `reports/` | 13, Tables 1 to 3 (and the copies of the analysts' reports and plans) |
 | `space_from_analyst.py` | `space.json` | 14 |
-| `gen_sharks_games.py` | `sharks_before.json`, `sharks_after.json` | 15 |
+| `gen_sharks_games.py` | `sharks_before.json`, `sharks_after.json` | 16 |
+| `og.html` (photographed with headless Chrome; see the file) | `og.png` | the link-preview image |
+| `clip_before_after.py` | a social clip in the private `videos/` folder | – |
 
 Figures 2, 10 and 11 need no data file. `space_from_analyst.py` runs the Sharks analyst's own figure code on its own data files. Run it inside the sandbox image, with the workspace mounted read-only and no network:
 
