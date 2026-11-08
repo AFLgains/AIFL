@@ -62,9 +62,9 @@ to test: **[docs/writing-bots.md](../docs/writing-bots.md)**.
 
 ## The challenge: beat round_29a
 
-[`challenge/`](../challenge/README.md) publishes a strong AFL8 bot, `round_29a`, and a grader. Can your bot win
-55 % of 400 games against it? The grader also gives an Elo rating against a fixed pool of public bots. AFL18 has the
-same challenge, against `zoo:rules`.
+[`challenge/`](../challenge/README.md) publishes a strong AFL8 bot, `round_29a`, as a benchmark, and a grader. Can
+your bot win 55 % of 400 games against it? The grader also gives your Elo, with `round_29a` at 0. AFL18 has the
+same challenge, with `zoo:rules` as the benchmark.
 
 ```bash
 python challenge/grade.py path/to/my_bot.py --quick
